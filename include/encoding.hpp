@@ -1,44 +1,13 @@
 #ifndef ENCODING_HPP_
 #define ENCODING_HPP_
 
-namespace toy_sim {
-enum class reg {
-  kX0 = 0b00000,
-  kX1 = 0b00001,
-  kX2 = 0b00010,
-  kX3 = 0b00011,
-  kX4 = 0b00100,
-  kX5 = 0b00101,
-  kX6 = 0b00110,
-  kX7 = 0b00111,
-  kX8 = 0b01000,
-  kX9 = 0b01001,
-  kX10 = 0b01010,
-  kX11 = 0b01011,
-  kX12 = 0b01100,
-  kX13 = 0b01101,
-  kX14 = 0b01110,
-  kX15 = 0b01111,
-  kX16 = 0b10000,
-  kX17 = 0b10001,
-  kX18 = 0b10010,
-  kX19 = 0b10011,
-  kX20 = 0b10100,
-  kX21 = 0b10101,
-  kX22 = 0b10110,
-  kX23 = 0b10111,
-  kX24 = 0b11000,
-  kX25 = 0b11001,
-  kX26 = 0b11010,
-  kX27 = 0b11011,
-  kX28 = 0b11100,
-  kX29 = 0b11101,
-  kX30 = 0b11110,
-  kX31 = 0b11111
-};
+#include <cstdint>
 
-enum class op_codes {
-  kNop = 0b000000,
+namespace toy_sim {
+
+using Word = uint32_t;
+
+enum Opcode : uint8_t {
   kLd = 0b010111,
   kAdd = 0b000000,
   kBeq = 0b001101,
@@ -47,13 +16,93 @@ enum class op_codes {
   kStp = 0b111111,
   kAddi = 0b001010,
   kJ = 0b110111,
-  kLdPostIndex = 0b000111,
+  kLdPost = 0b000111,
   kNor = 0b000000,
   kSsat = 0b010100,
   kRbit = 0b000000,
   kSyscall = 0b000000,
   kBext = 0b000000,
-  kUsat = 0b110000
+  kUsat = 0b110000,
+};
+
+constexpr uint16_t ConvertToCommandType(uint8_t opcode, uint8_t funct) {
+  return (static_cast<uint16_t>(opcode) << 6) | static_cast<uint16_t>(funct);
+}
+enum class CommandType : uint16_t {
+  kUnknown = ConvertToCommandType(0b000000, 0b000000),
+  kLd = ConvertToCommandType(0b010111, 0b000000),
+  kAdd = ConvertToCommandType(0b000000, 0b011000),
+  kBeq = ConvertToCommandType(0b001101, 0b000000),
+  kLi = ConvertToCommandType(0b101011, 0b000000),
+  kSt = ConvertToCommandType(0b101100, 0b000000),
+  kStp = ConvertToCommandType(0b111111, 0b000000),
+  kAddi = ConvertToCommandType(0b001010, 0b000000),
+  kJ = ConvertToCommandType(0b110111, 0b000000),
+  kLdPost = ConvertToCommandType(0b000111, 0b000000),
+  kNor = ConvertToCommandType(0b000000, 0b101001),
+  kSsat = ConvertToCommandType(0b010100, 0b000000),
+  kRbit = ConvertToCommandType(0b000000, 0b111110),
+  kSyscall = ConvertToCommandType(0b000000, 0b010000),
+  kBext = ConvertToCommandType(0b000000, 0b100110),
+  kUsat = ConvertToCommandType(0b110000, 0b000000),
+};
+constexpr bool CheckIfCommandType(uint16_t command_type) {
+  switch (static_cast<CommandType>(command_type)) {
+    case CommandType::kLd:
+    case CommandType::kAdd:
+    case CommandType::kBeq:
+    case CommandType::kLi:
+    case CommandType::kSt:
+    case CommandType::kStp:
+    case CommandType::kAddi:
+    case CommandType::kJ:
+    case CommandType::kLdPost:
+    case CommandType::kNor:
+    case CommandType::kSsat:
+    case CommandType::kRbit:
+    case CommandType::kSyscall:
+    case CommandType::kBext:
+    case CommandType::kUsat:
+      return true;
+    default:
+      return false;
+  }
+}
+
+enum class Register : uint8_t {
+  kX0 = 0,
+  kX1 = 1,
+  kX2 = 2,
+  kX3 = 3,
+  kX4 = 4,
+  kX5 = 5,
+  kX6 = 6,
+  kX7 = 7,
+  kX8 = 8,
+  kX9 = 9,
+  kX10 = 10,
+  kX11 = 11,
+  kX12 = 12,
+  kX13 = 13,
+  kX14 = 14,
+  kX15 = 15,
+  kX16 = 16,
+  kX17 = 17,
+  kX18 = 18,
+  kX19 = 19,
+  kX20 = 20,
+  kX21 = 21,
+  kX22 = 22,
+  kX23 = 23,
+  kX24 = 24,
+  kX25 = 25,
+  kX26 = 26,
+  kX27 = 27,
+  kX28 = 28,
+  kX29 = 29,
+  kX30 = 30,
+  kX31 = 31,
+  kPc = 32
 };
 }  // namespace toy_sim
 
