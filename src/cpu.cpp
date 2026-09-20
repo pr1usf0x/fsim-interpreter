@@ -10,36 +10,36 @@ namespace toy_sim {
 
 // ================================ FETCH =====================================
 
-Word Cpu::Fetch() {
+uint32_t Cpu::Fetch() {
   return memory_.Read(pc_);
 }
 
 // ================================ DECODER ===================================
 
 namespace {
-inline uint32_t GetBits(Word word, size_t low_b, size_t up_b) {
-  assert(up_b < 8 * sizeof(word));
-  assert(low_b < 8 * sizeof(word));
+inline uint32_t GetBits(uint32_t bits, size_t low_b, size_t up_b) {
+  assert(up_b < 8 * sizeof(bits));
+  assert(low_b < 8 * sizeof(bits));
   assert(low_b <= up_b);
 
   size_t n = up_b - low_b + 1;
-  Word mask = ~0U >> (8 * sizeof(word) - n);
-  return (word >> low_b) & mask;
+  uint32_t mask = ~0U >> (8 * sizeof(bits) - n);
+  return (bits >> low_b) & mask;
 }
 
-inline Register DecodeReg1(Word word) {
+inline Register DecodeReg1(uint32_t word) {
   return static_cast<Register>(GetBits(word, 21, 25));
 }
 
-inline Register DecodeReg2(Word word) {
+inline Register DecodeReg2(uint32_t word) {
   return static_cast<Register>(GetBits(word, 16, 20));
 }
 
-inline Register DecodeReg3(Word word) {
+inline Register DecodeReg3(uint32_t word) {
   return static_cast<Register>(GetBits(word, 11, 15));
 }
 
-CommandType GetCommandType(Word word) {
+CommandType GetCommandType(uint32_t word) {
   // [31:26] - opcode
   // [5:0] - opcode_2 for similar opcodes
   auto opcode = GetBits(word, 26, 31);
@@ -74,7 +74,7 @@ CommandType GetCommandType(Word word) {
 
 }  // namespace
 
-Instruction Cpu::Decode(Word instr_code) {
+Instruction Cpu::Decode(uint32_t instr_code) {
   auto command_type = GetCommandType(instr_code);
   Instruction instr{};
   instr.type_ = command_type;
@@ -168,7 +168,7 @@ inline int32_t SignExtend(uint32_t num, size_t n) {
   return (static_cast<int32_t>(num << n) >> n);
 }
 
-inline Word SaturateSigned(Word num, size_t n) {
+inline uint32_t SaturateSigned(uint32_t num, size_t n) {
   assert(n <= 31);
   if (n == 0)
     return 0;
@@ -179,13 +179,13 @@ inline Word SaturateSigned(Word num, size_t n) {
              : std::max<int32_t>(min_n_int, static_cast<int32_t>(num));
 }
 
-inline Word SaturateUnsigned(Word num, size_t n) {
+inline uint32_t SaturateUnsigned(uint32_t num, size_t n) {
   assert(n <= 32);
-  uint32_t max_n_uint = ~0U >> (sizeof(Word) * 8 - n);
+  uint32_t max_n_uint = ~0U >> (sizeof(uint32_t) * 8 - n);
   return std::min<uint32_t>(max_n_uint, num);
 }
 
-Word ReverseBit(Word num) {
+uint32_t ReverseBit(uint32_t num) {
   num = ((num & 0x55555555) << 1) | ((num & 0xAAAAAAAA) >> 1);
   num = ((num & 0x33333333) << 2) | ((num & 0xCCCCCCCC) >> 2);
   num = ((num & 0x0F0F0F0F) << 4) | ((num & 0xF0F0F0F0) >> 4);
@@ -194,11 +194,11 @@ Word ReverseBit(Word num) {
   return num;
 }
 
-inline Word BitExtract(Word num, Word mask) {
-  Word c = 0;
-  Word m = 1;
+inline uint32_t BitExtract(uint32_t num, uint32_t mask) {
+  uint32_t c = 0;
+  uint32_t m = 1;
   while (mask) {
-    Word b = mask & -mask;
+    uint32_t b = mask & -mask;
     if (num & b)
       c |= m;
     mask -= b;
@@ -212,55 +212,55 @@ void Cpu::Execute(Instruction instr) {
   switch (instr.type_) {
     case CommandType::kLd: {
       size_t addr = GetRegister(instr.r1_) + SignExtend(instr.imm_, 14);
-      if (addr % sizeof(Word))
+      if (addr % sizeof(uint32_t))
         throw std::runtime_error("Executor: MisalignedAccess");
       SetRegister(instr.r2_, memory_.Read(addr));
-      pc_ += sizeof(Word);
+      pc_ += sizeof(uint32_t);
       break;
     }
 
     case CommandType::kAdd: {
       SetRegister(instr.r3_, GetRegister(instr.r1_) + GetRegister(instr.r2_));
-      pc_ += sizeof(Word);
+      pc_ += sizeof(uint32_t);
       break;
     }
 
     case CommandType::kBeq: {
       size_t target = SignExtend(instr.imm_, 16) << 2;
       bool cond = GetRegister(instr.r1_) == GetRegister(instr.r2_);
-      pc_ = cond ? pc_ + target : pc_ + sizeof(Word);
+      pc_ = cond ? pc_ + target : pc_ + sizeof(uint32_t);
       break;
     }
 
     case CommandType::kLi: {
       SetRegister(instr.r1_, SignExtend(instr.imm_, 16));
-      pc_ += sizeof(Word);
+      pc_ += sizeof(uint32_t);
       break;
     }
 
     case CommandType::kSt: {
       size_t addr = GetRegister(instr.r1_) + SignExtend(instr.imm_, 14);
-      if (addr % sizeof(Word))
+      if (addr % sizeof(uint32_t))
         throw std::runtime_error("Executor: MisalignedAccess");
       memory_.Write(addr, GetRegister(instr.r2_));
-      pc_ += sizeof(Word);
+      pc_ += sizeof(uint32_t);
       break;
     }
 
     case CommandType::kStp: {
       size_t addr = GetRegister(instr.r1_) + SignExtend(instr.imm_, 11);
-      if (addr % sizeof(Word))
+      if (addr % sizeof(uint32_t))
         throw std::runtime_error("Executor: MisalignedAccess");
       memory_.Write(addr, GetRegister(instr.r2_));
-      memory_.Write(addr + sizeof(Word), GetRegister(instr.r3_));
-      pc_ += sizeof(Word);
+      memory_.Write(addr + sizeof(uint32_t), GetRegister(instr.r3_));
+      pc_ += sizeof(uint32_t);
       break;
     }
 
     case CommandType::kAddi: {
       SetRegister(instr.r2_,
                   GetRegister(instr.r1_) + SignExtend(instr.imm_, 16));
-      pc_ += sizeof(Word);
+      pc_ += sizeof(uint32_t);
       break;
     }
 
@@ -270,52 +270,52 @@ void Cpu::Execute(Instruction instr) {
     }
 
     case CommandType::kLdPost: {
-      if (GetRegister(instr.r1_) % sizeof(Word))
+      if (GetRegister(instr.r1_) % sizeof(uint32_t))
         throw std::runtime_error("Executor: MisalignedAccess");
       SetRegister(instr.r2_, memory_.Read(GetRegister(instr.r1_)));
       SetRegister(instr.r1_,
                   GetRegister(instr.r1_) + SignExtend(instr.imm_, 14));
-      pc_ += sizeof(Word);
+      pc_ += sizeof(uint32_t);
       break;
     }
 
     case CommandType::kNor: {
       SetRegister(instr.r3_,
                   ~(GetRegister(instr.r1_) | GetRegister(instr.r2_)));
-      pc_ += sizeof(Word);
+      pc_ += sizeof(uint32_t);
       break;
     }
 
     case CommandType::kSsat: {
       SetRegister(instr.r1_,
                   SaturateSigned(GetRegister(instr.r2_), instr.imm_));
-      pc_ += sizeof(Word);
+      pc_ += sizeof(uint32_t);
       break;
     }
 
     case CommandType::kRbit: {
       SetRegister(instr.r1_, ReverseBit(GetRegister(instr.r2_)));
-      pc_ += sizeof(Word);
+      pc_ += sizeof(uint32_t);
       break;
     }
 
     case CommandType::kSyscall: {
       // connect kernel here
-      pc_ += sizeof(Word);
+      pc_ += sizeof(uint32_t);
       break;
     }
 
     case CommandType::kBext: {
       SetRegister(instr.r1_,
                   BitExtract(GetRegister(instr.r2_), GetRegister(instr.r3_)));
-      pc_ += sizeof(Word);
+      pc_ += sizeof(uint32_t);
       break;
     }
 
     case CommandType::kUsat: {
       SetRegister(instr.r1_,
                   SaturateUnsigned(GetRegister(instr.r2_), instr.imm_));
-      pc_ += sizeof(Word);
+      pc_ += sizeof(uint32_t);
       break;
     }
 

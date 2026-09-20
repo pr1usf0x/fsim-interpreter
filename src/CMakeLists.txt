@@ -1,6 +1,6 @@
-set(SOURCES
+set(TARGET_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/cpu.cpp)
 
-target_sources(${TARGET} PRIVATE ${SOURCES})
+target_sources(${TARGET} PRIVATE ${TARGET_SOURCES})
 

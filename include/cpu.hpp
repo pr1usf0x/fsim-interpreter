@@ -15,7 +15,7 @@ struct Instruction {
   Register r1_;
   Register r2_;
   Register r3_;
-  Word imm_;
+  uint32_t imm_;
 };
 
 class Cpu {
@@ -24,21 +24,21 @@ class Cpu {
   void RunProgram();
 
   // setters
-  void SetRegister(Register reg, Word value) {
+  void SetRegister(Register reg, uint32_t value) {
     reg != Register::kPc ? registers_[static_cast<size_t>(reg)] = value
                          : pc_ = value;
   }
   // getters
-  Word GetRegister(Register reg) {
+  uint32_t GetRegister(Register reg) {
     return reg != Register::kPc ? registers_[static_cast<size_t>(reg)] : pc_;
   }
 
  private:
-  std::vector<Word> registers_;
-  Word pc_{};
+  std::vector<uint32_t> registers_;
+  uint32_t pc_{};
 
-  Word Fetch();
-  static Instruction Decode(Word instr);
+  uint32_t Fetch();
+  static Instruction Decode(uint32_t instr);
   void Execute(Instruction instr);
 
   Memory& memory_;

@@ -29,10 +29,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src)
 # ===== tests =====
 
 enable_testing()
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/tests)
 
-include(GoogleTest)
 
-set(TEST_TARGET)
-add_executable(${TEST_TARGET} ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/isa_test.cpp)
-target_include_directories(${TEST_TARGET} PUBLIC ${PROJECT_SOURCE_DIR}/include)
-target_link_libraries(cache_algorithm_test PRIVATE GTest::gtest_main)
+

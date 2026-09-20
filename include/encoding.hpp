@@ -5,7 +5,7 @@
 
 namespace toy_sim {
 
-using Word = uint32_t;
+using uint32_t = uint32_t;
 
 enum Opcode : uint8_t {
   kLd = 0b010111,

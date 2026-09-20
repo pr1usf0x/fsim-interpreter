@@ -15,16 +15,16 @@ class Memory {
  public:
   Memory() : data_(kMemorySize) {}
 
-  Word Read(uint32_t addr) {
+  uint32_t Read(uint32_t addr) {
     if (addr > kMemorySize - 4)
       throw std::runtime_error("Segfault");
-    return static_cast<Word>(data_[addr]) |
-           static_cast<Word>(data_[addr + 1]) << 8 |
-           static_cast<Word>(data_[addr + 2]) << 16 |
-           static_cast<Word>(data_[addr + 3]) << 24;
+    return static_cast<uint32_t>(data_[addr]) |
+           static_cast<uint32_t>(data_[addr + 1]) << 8 |
+           static_cast<uint32_t>(data_[addr + 2]) << 16 |
+           static_cast<uint32_t>(data_[addr + 3]) << 24;
   }
 
-  void Write(Word addr, Word var) {
+  void Write(uint32_t addr, uint32_t var) {
     if (addr > kMemorySize - 4)
       throw std::runtime_error("Segfault");
     data_[addr] = static_cast<std::byte>(var);

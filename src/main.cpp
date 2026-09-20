@@ -1,12 +1,10 @@
+#include <bitset>
 #include <iostream>
 
 #include "encoding.hpp"
+#include "microasm.hpp"
 
 int main() {
-    #ifdef __ARM_FEATURE_ 
-        std::cout << "meow";
-    #endif
 
-
-    return 0;
+  return 0;
 }
