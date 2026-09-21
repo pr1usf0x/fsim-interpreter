@@ -24,12 +24,13 @@ FetchContent_MakeAvailable(googletest)
 
 add_executable(${TARGET})
 target_include_directories(${TARGET} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 # ===== tests =====
 
 enable_testing()
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/tests)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tests)
 
 
 

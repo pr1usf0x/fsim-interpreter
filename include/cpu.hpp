@@ -9,7 +9,6 @@
 
 namespace toy_sim {
 
-constexpr size_t kRegCount = 32;
 struct Instruction {
   CommandType type_;
   Register r1_;
@@ -33,7 +32,10 @@ class Cpu {
     return reg != Register::kPc ? registers_[static_cast<size_t>(reg)] : pc_;
   }
 
+#ifndef ENABLE_TEST
  private:
+#endif
+
   std::vector<uint32_t> registers_;
   uint32_t pc_{};
 

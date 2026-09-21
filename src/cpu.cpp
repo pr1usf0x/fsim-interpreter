@@ -2,7 +2,6 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
-#include <set>
 #include <stdexcept>
 #include "encoding.hpp"
 

@@ -2,14 +2,14 @@
 #define MACHINE_HPP_
 
 #include "cpu.hpp"
-#include "memory.hpp"
 #include "kernel.hpp"
+#include "memory.hpp"
 
 namespace toy_sim {
 
 class Machine {
  public:
-  Machine() : cpu_(memory_) {};
+  explicit Machine(size_t mem_size) : memory_(mem_size), cpu_(memory_) {};
 
  private:
   Memory memory_;

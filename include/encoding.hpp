@@ -2,6 +2,7 @@
 #define ENCODING_HPP_
 
 #include <cstdint>
+#include <cstdlib>
 
 namespace toy_sim {
 
@@ -69,6 +70,7 @@ constexpr bool CheckIfCommandType(uint16_t command_type) {
   }
 }
 
+constexpr size_t kRegCount = 32;
 enum class Register : uint8_t {
   kX0 = 0,
   kX1 = 1,
