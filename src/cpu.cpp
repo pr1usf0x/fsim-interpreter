@@ -74,6 +74,14 @@ CommandType GetCommandType(uint32_t word) {
 
 }  // namespace
 
+void Cpu::RunProgram() {
+  for (;;) {
+    uint32_t instr = Fetch();
+    Instruction decoded_instr = Decode(instr);
+    Execute(decoded_instr);
+  }
+}
+
 Instruction Cpu::Decode(uint32_t instr_code) {
   auto command_type = GetCommandType(instr_code);
   Instruction instr{};
@@ -185,7 +193,7 @@ inline uint32_t SaturateUnsigned(uint32_t num, size_t n) {
   return std::min<uint32_t>(max_n_uint, num);
 }
 
-uint32_t ReverseBit(uint32_t num) {
+inline uint32_t ReverseBit(uint32_t num) {
   num = ((num & 0x55555555) << 1) | ((num & 0xAAAAAAAA) >> 1);
   num = ((num & 0x33333333) << 2) | ((num & 0xCCCCCCCC) >> 2);
   num = ((num & 0x0F0F0F0F) << 4) | ((num & 0xF0F0F0F0) >> 4);
@@ -198,7 +206,7 @@ inline uint32_t BitExtract(uint32_t num, uint32_t mask) {
   uint32_t c = 0;
   uint32_t m = 1;
   while (mask) {
-    uint32_t b = mask & -mask;
+    uint32_t b = (mask) & (-mask);
     if (num & b)
       c |= m;
     mask -= b;
@@ -208,7 +216,7 @@ inline uint32_t BitExtract(uint32_t num, uint32_t mask) {
 }
 }  // namespace
 
-void Cpu::Execute(Instruction instr) {
+void Cpu::Execute(const Instruction instr) {
   switch (instr.type_) {
     case CommandType::kLd: {
       size_t addr = GetRegister(instr.r1_) + SignExtend(instr.imm_, 14);
@@ -226,9 +234,9 @@ void Cpu::Execute(Instruction instr) {
     }
 
     case CommandType::kBeq: {
-      size_t target = SignExtend(instr.imm_, 16) << 2;
+      size_t offset = SignExtend(instr.imm_, 16) << 2;
       bool cond = GetRegister(instr.r1_) == GetRegister(instr.r2_);
-      pc_ = cond ? pc_ + target : pc_ + sizeof(uint32_t);
+      pc_ = cond ? pc_ + offset : pc_ + sizeof(uint32_t);
       break;
     }
 
@@ -300,6 +308,7 @@ void Cpu::Execute(Instruction instr) {
     }
 
     case CommandType::kSyscall: {
+      pc_ += sizeof(uint32_t);
       throw SyscallException(static_cast<Syscalls>(instr.imm_));
       break;
     }

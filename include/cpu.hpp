@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <memory>
 #include <vector>
+#include <unordered_map>
 #include "encoding.hpp"
 #include "memory.hpp"
 
@@ -44,6 +45,7 @@ class Cpu {
   void Execute(Instruction instr);
 
   Memory& memory_;
+
 };
 }  // namespace toy_sim
 

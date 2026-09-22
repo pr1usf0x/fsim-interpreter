@@ -44,9 +44,15 @@ class Memory {
 #endif
   }
 
+  char* GetDataPtr(uint32_t addr) {
+    if (addr >= mem_size_)
+      throw std::runtime_error("Segfault");
+    return data_.data();
+  }
+
  private:
   size_t mem_size_{};
-  std::vector<std::byte> data_;
+  std::vector<char> data_;
 };
 }  // namespace toy_sim
 

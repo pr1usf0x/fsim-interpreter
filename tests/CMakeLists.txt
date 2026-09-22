@@ -10,3 +10,10 @@ target_compile_definitions(${TEST_TARGET} PRIVATE -DENABLE_TEST)
 target_include_directories(${TEST_TARGET} PRIVATE ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(${TEST_TARGET} PRIVATE GTest::gtest_main)
 gtest_discover_tests(${TEST_TARGET})
+
+
+set(GEN_TARGET_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/gen_fibs.cpp)
+set(GEN_TARGET fib_gen)
+add_executable(${GEN_TARGET})
+target_sources(${GEN_TARGET} PRIVATE ${GEN_TARGET_SOURCES})
+target_include_directories(${GEN_TARGET} PRIVATE ${PROJECT_SOURCE_DIR}/include)

@@ -34,7 +34,7 @@ constexpr uint32_t GenBits(uint32_t bits, std::size_t low_b, std::size_t up_b) {
   assert(low_b <= up_b);
 
   std::size_t n = up_b - low_b + 1;
-  uint32_t mask = ~uint32_t{0} >> (8 * sizeof(bits) - n);
+  uint32_t mask = (~uint32_t{0}) >> (8 * sizeof(bits) - n);
   return (bits & mask) << low_b;
 }
 
