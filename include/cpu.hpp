@@ -3,8 +3,9 @@
 
 #include <cstdint>
 #include <memory>
-#include <vector>
 #include <unordered_map>
+#include <utility>
+#include <vector>
 #include "encoding.hpp"
 #include "memory.hpp"
 
@@ -18,6 +19,9 @@ struct Instruction {
   uint32_t imm_;
 };
 
+using BasicBlock = std::vector<Instruction>;
+
+constexpr size_t kDecoderCacheSize = 30;
 class Cpu {
  public:
   explicit Cpu(Memory& memory) : registers_(kRegCount), memory_(memory) {}
@@ -40,12 +44,13 @@ class Cpu {
   std::vector<uint32_t> registers_;
   uint32_t pc_{};
 
-  uint32_t Fetch();
+  const BasicBlock& Fetch();
+  BasicBlock DecodeBB();
   static Instruction Decode(uint32_t instr);
   void Execute(Instruction instr);
 
   Memory& memory_;
-
+  std::unordered_map<uint32_t, BasicBlock> decoder_cache_;
 };
 }  // namespace toy_sim
 

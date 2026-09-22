@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <stdexcept>
+#include <utility>
 #include "encoding.hpp"
 #include "kernel.hpp"
 
@@ -10,8 +11,14 @@ namespace toy_sim {
 
 // ================================ FETCH =====================================
 
-uint32_t Cpu::Fetch() {
-  return memory_.Read(pc_);
+const BasicBlock& Cpu::Fetch() {
+  auto bb = decoder_cache_.find(pc_);
+  if (bb == decoder_cache_.end()) {
+    auto decoded_bb = DecodeBB();
+    bb = decoder_cache_.insert(std::make_pair(pc_, decoded_bb)).first;
+  }
+
+  return bb->second;
 }
 
 // ================================ DECODER ===================================
@@ -76,9 +83,10 @@ CommandType GetCommandType(uint32_t word) {
 
 void Cpu::RunProgram() {
   for (;;) {
-    uint32_t instr = Fetch();
-    Instruction decoded_instr = Decode(instr);
-    Execute(decoded_instr);
+    const BasicBlock& bb = Fetch();
+    for (auto instr : bb) {
+      Execute(instr);
+    }
   }
 }
 
@@ -164,6 +172,20 @@ Instruction Cpu::Decode(uint32_t instr_code) {
       throw std::runtime_error("Decoder: failed to identify the instruction");
   }
   return instr;
+}
+
+BasicBlock Cpu::DecodeBB() {
+  uint32_t pc = pc_;
+  BasicBlock bb{};
+  Instruction decoded{};
+  do {
+    decoded = Decode(memory_.Read(pc));
+    bb.push_back(decoded);
+    pc += sizeof(uint32_t);
+  } while (decoded.type_ != CommandType::kJ &&
+           decoded.type_ != CommandType::kBeq &&
+           decoded.type_ != CommandType::kSyscall);
+  return bb;
 }
 
 // ================================== EXECUTION ===============================

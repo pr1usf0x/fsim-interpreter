@@ -6,8 +6,13 @@ set(TARGET toy_vm)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL
     "Generate compile_commands.json" FORCE)
 
+if(MSVC)
+    set(CMAKE_CXX_FLAGS "-O2 -Wall")
+else()
+    set(CMAKE_CXX_FLAGS "-O2 -Wall -Wextra")
+endif()
+
 set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_FLAGS "-O2 -Wall -Wextra")
 
 # ===== deps =====
 
@@ -18,12 +23,14 @@ FetchContent_Declare(
 )
 # For Windows: Prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+
 FetchContent_MakeAvailable(googletest)
 
 # ===== intreptretator =====
 
 add_executable(${TARGET})
-target_include_directories(${TARGET} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(${TARGET} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+                                             ${CMAKE_CURRENT_SOURCE_DIR}/external/cache/include)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src)
 

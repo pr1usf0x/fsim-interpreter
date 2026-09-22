@@ -1,0 +1,6 @@
+[submodule "cache"]
+	path = cache
+	url = https://github.com/pr1usf0x/cache
+[submodule "external/cache"]
+	path = external/cache
+	url = https://github.com/pr1usf0x/cache
