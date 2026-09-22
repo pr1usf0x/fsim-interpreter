@@ -6,7 +6,6 @@
 #include <cstring>
 #include <stdexcept>
 #include <vector>
-
 #include "encoding.hpp"
 
 namespace toy_sim {

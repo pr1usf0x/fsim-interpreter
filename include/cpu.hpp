@@ -28,7 +28,7 @@ class Cpu {
                          : pc_ = value;
   }
   // getters
-  uint32_t GetRegister(Register reg) {
+  uint32_t GetRegister(Register reg) const {
     return reg != Register::kPc ? registers_[static_cast<size_t>(reg)] : pc_;
   }
 

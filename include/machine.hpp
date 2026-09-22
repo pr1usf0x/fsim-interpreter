@@ -9,7 +9,8 @@ namespace toy_sim {
 
 class Machine {
  public:
-  explicit Machine(size_t mem_size) : memory_(mem_size), cpu_(memory_) {};
+  explicit Machine(size_t mem_size)
+      : memory_(mem_size), cpu_(memory_), kernel_(cpu_) {};
 
  private:
   Memory memory_;

@@ -4,7 +4,6 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
-
 #include "encoding.hpp"
 
 namespace toy_sim {

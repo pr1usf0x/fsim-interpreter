@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <stdexcept>
 #include "encoding.hpp"
+#include "kernel.hpp"
 
 namespace toy_sim {
 
@@ -299,8 +300,7 @@ void Cpu::Execute(Instruction instr) {
     }
 
     case CommandType::kSyscall: {
-      // connect kernel here
-      pc_ += sizeof(uint32_t);
+      throw SyscallException(static_cast<Syscalls>(instr.imm_));
       break;
     }
 

@@ -1,6 +1,5 @@
 #include <bitset>
 #include <iostream>
-
 #include "encoding.hpp"
 #include "microasm.hpp"
 
