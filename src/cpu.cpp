@@ -7,6 +7,8 @@
 #include "encoding.hpp"
 #include "kernel.hpp"
 
+#define DISPATCH() [[clang:.musttail]] \ return (handlers[memory[pc]])()
+
 namespace toy_sim {
 
 // ================================ FETCH =====================================
@@ -397,3 +399,5 @@ void Cpu::Execute(Instruction instr) {
 }
 
 }  // namespace toy_sim
+
+#undef DISPATCH
