@@ -5,6 +5,7 @@
 #include "kernel.hpp"
 #include "machine.hpp"
 #include "memory.hpp"
+#include "microasm.hpp"
 
 namespace toy_sim {
 namespace {
@@ -332,6 +333,59 @@ class FuckedSyscallTest : public testing::Test {
 
 TEST_F(FuckedSyscallTest, NorTest1) {
   Test(Syscalls::kExit);
+}
+
+TEST(ThreadedExecutionTest, BranchesJumpsAndSyscallResume) {
+  Memory memory{kMemorySize};
+  Cpu cpu{memory};
+  const uint32_t program[] = {
+      GenLiInstr(Register::kX1, 1),
+      GenBeqInstr(Register::kX1, Register::kX0, 3),
+      GenAddiInstr(Register::kX1, Register::kX1, 1),
+      GenBeqInstr(Register::kX1, Register::kX1, 2),
+      GenAddiInstr(Register::kX1, Register::kX1, 100),
+      GenJInstr(7),
+      GenAddiInstr(Register::kX1, Register::kX1, 100),
+      GenSyscallInstr(static_cast<uint32_t>(Syscalls::kPrintUnsigned)),
+      GenAddiInstr(Register::kX1, Register::kX1, 3),
+      GenSyscallInstr(static_cast<uint32_t>(Syscalls::kExit)),
+  };
+  for (size_t i = 0; i < sizeof(program) / sizeof(program[0]); ++i)
+    memory.Write(i * sizeof(uint32_t), program[i]);
+
+  try {
+    cpu.RunProgram();
+    FAIL() << "Expected syscall";
+  } catch (const SyscallException& e) {
+    EXPECT_EQ(e.syscall, Syscalls::kPrintUnsigned);
+  }
+  EXPECT_EQ(cpu.GetRegister(Register::kX1), 2u);
+  EXPECT_EQ(cpu.GetRegister(Register::kPc), 8 * sizeof(uint32_t));
+
+  try {
+    cpu.RunProgram();
+    FAIL() << "Expected syscall";
+  } catch (const SyscallException& e) {
+    EXPECT_EQ(e.syscall, Syscalls::kExit);
+  }
+  EXPECT_EQ(cpu.GetRegister(Register::kX1), 5u);
+  EXPECT_EQ(cpu.GetRegister(Register::kPc), sizeof(program));
+}
+
+TEST(ThreadedExecutionTest, LongBasicBlock) {
+  constexpr size_t kInstructionCount = 100000;
+  Memory memory{(kInstructionCount + 1) * sizeof(uint32_t)};
+  Cpu cpu{memory};
+  for (size_t i = 0; i < kInstructionCount; ++i)
+    memory.Write(i * sizeof(uint32_t),
+                 GenAddiInstr(Register::kX1, Register::kX1, 1));
+  memory.Write(kInstructionCount * sizeof(uint32_t),
+               GenSyscallInstr(static_cast<uint32_t>(Syscalls::kExit)));
+
+  EXPECT_THROW(cpu.RunProgram(), SyscallException);
+  EXPECT_EQ(cpu.GetRegister(Register::kX1), kInstructionCount);
+  EXPECT_EQ(cpu.GetRegister(Register::kPc),
+            (kInstructionCount + 1) * sizeof(uint32_t));
 }
 
 }  // namespace toy_sim

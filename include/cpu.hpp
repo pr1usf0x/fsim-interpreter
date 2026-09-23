@@ -26,7 +26,7 @@ class Cpu {
  public:
   explicit Cpu(Memory& memory) : registers_(kRegCount), memory_(memory) {}
   void RunProgram();
-  void Step();
+  void Step() { pc_ += sizeof(uint32_t); }
 
   // setters
   void SetRegister(Register reg, uint32_t value) {
