@@ -26,6 +26,7 @@ class Cpu {
  public:
   explicit Cpu(Memory& memory) : registers_(kRegCount), memory_(memory) {}
   void RunProgram();
+  void Step();
 
   // setters
   void SetRegister(Register reg, uint32_t value) {
@@ -33,6 +34,8 @@ class Cpu {
                          : pc_ = value;
   }
   // getters
+  Memory& GetMemory() { return memory_; }
+
   uint32_t GetRegister(Register reg) const {
     return reg != Register::kPc ? registers_[static_cast<size_t>(reg)] : pc_;
   }

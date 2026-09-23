@@ -81,6 +81,10 @@ CommandType GetCommandType(uint32_t word) {
 
 }  // namespace
 
+void Cpu::Step() {
+  pc_ += sizeof(uint32_t);
+}
+
 void Cpu::RunProgram() {
   for (;;) {
     const BasicBlock& bb = Fetch();
@@ -236,122 +240,159 @@ inline uint32_t BitExtract(uint32_t num, uint32_t mask) {
   }
   return c;
 }
+
+void CheckAlignment(size_t addr) {
+  if (addr % sizeof(uint32_t))
+    throw std::runtime_error("Executor: MisalignedAccess");
+}
+
+void ExecuteLoad(Cpu& cpu, Instruction instr) {
+  size_t addr = cpu.GetRegister(instr.r1_) + SignExtend(instr.imm_, 14);
+  CheckAlignment(addr);
+  cpu.SetRegister(instr.r2_, cpu.GetMemory().Read(addr));
+  cpu.Step();
+}
+
+void ExecuteStore(Cpu& cpu, Instruction instr) {
+  size_t addr = cpu.GetRegister(instr.r1_) + SignExtend(instr.imm_, 14);
+  CheckAlignment(addr);
+  cpu.GetMemory().Write(addr, cpu.GetRegister(instr.r2_));
+  cpu.Step();
+}
+
+void ExecuteStorePair(Cpu& cpu, Instruction instr) {
+  size_t addr = cpu.GetRegister(instr.r1_) + SignExtend(instr.imm_, 11);
+  CheckAlignment(addr);
+  cpu.GetMemory().Write(addr, cpu.GetRegister(instr.r2_));
+  cpu.GetMemory().Write(addr + sizeof(uint32_t), cpu.GetRegister(instr.r3_));
+  cpu.Step();
+}
+
+void ExecuteLoadPost(Cpu& cpu, Instruction instr) {
+  CheckAlignment(cpu.GetRegister(instr.r1_));
+  cpu.SetRegister(instr.r2_, cpu.GetMemory().Read(cpu.GetRegister(instr.r1_)));
+  cpu.SetRegister(instr.r1_,
+                  cpu.GetRegister(instr.r1_) + SignExtend(instr.imm_, 14));
+  cpu.Step();
+}
+
+void ExecuteAdd(Cpu& cpu, Instruction instr) {
+  cpu.SetRegister(instr.r3_,
+                  cpu.GetRegister(instr.r1_) + cpu.GetRegister(instr.r2_));
+  cpu.Step();
+}
+
+void ExecuteBranchEqual(Cpu& cpu, Instruction instr) {
+  size_t offset = SignExtend(instr.imm_, 16) << 2;
+  bool cond = cpu.GetRegister(instr.r1_) == cpu.GetRegister(instr.r2_);
+  if (cond) {
+    cpu.SetRegister(Register::kPc, cpu.GetRegister(Register::kPc) + offset);
+  } else {
+    cpu.Step();
+  }
+}
+
+void ExecuteLoadImmediate(Cpu& cpu, Instruction instr) {
+  cpu.SetRegister(instr.r1_, SignExtend(instr.imm_, 16));
+  cpu.Step();
+}
+
+void ExecuteAddImmediate(Cpu& cpu, Instruction instr) {
+  cpu.SetRegister(instr.r2_,
+                  cpu.GetRegister(instr.r1_) + SignExtend(instr.imm_, 16));
+  cpu.Step();
+}
+
+void ExecuteJump(Cpu& cpu, Instruction instr) {
+  cpu.SetRegister(Register::kPc, (cpu.GetRegister(Register::kPc) & 0xF0000000) |
+                                     (instr.imm_ << 2));
+}
+
+void ExecuteNor(Cpu& cpu, Instruction instr) {
+  cpu.SetRegister(instr.r3_,
+                  ~(cpu.GetRegister(instr.r1_) | cpu.GetRegister(instr.r2_)));
+  cpu.Step();
+}
+
+void ExecuteSaturateSigned(Cpu& cpu, Instruction instr) {
+  cpu.SetRegister(instr.r1_,
+                  SaturateSigned(cpu.GetRegister(instr.r2_), instr.imm_));
+  cpu.Step();
+}
+
+void ExecuteReverseBit(Cpu& cpu, Instruction instr) {
+  cpu.SetRegister(instr.r1_, ReverseBit(cpu.GetRegister(instr.r2_)));
+  cpu.Step();
+}
+
+[[noreturn]] void ExecuteSyscall(Cpu& cpu, Instruction instr) {
+  cpu.Step();
+  throw SyscallException(static_cast<Syscalls>(instr.imm_));
+}
+
+void ExecuteBitExtract(Cpu& cpu, Instruction instr) {
+  cpu.SetRegister(instr.r1_, BitExtract(cpu.GetRegister(instr.r2_),
+                                        cpu.GetRegister(instr.r3_)));
+  cpu.Step();
+}
+
+void ExecuteSaturateUnsigned(Cpu& cpu, Instruction instr) {
+  cpu.SetRegister(instr.r1_,
+                  SaturateUnsigned(cpu.GetRegister(instr.r2_), instr.imm_));
+  cpu.Step();
+}
 }  // namespace
 
-void Cpu::Execute(const Instruction instr) {
+void Cpu::Execute(Instruction instr) {
   switch (instr.type_) {
-    case CommandType::kLd: {
-      size_t addr = GetRegister(instr.r1_) + SignExtend(instr.imm_, 14);
-      if (addr % sizeof(uint32_t))
-        throw std::runtime_error("Executor: MisalignedAccess");
-      SetRegister(instr.r2_, memory_.Read(addr));
-      pc_ += sizeof(uint32_t);
+    case CommandType::kLd:
+      ExecuteLoad(*this, instr);
       break;
-    }
-
-    case CommandType::kAdd: {
-      SetRegister(instr.r3_, GetRegister(instr.r1_) + GetRegister(instr.r2_));
-      pc_ += sizeof(uint32_t);
+    case CommandType::kAdd:
+      ExecuteAdd(*this, instr);
       break;
-    }
-
-    case CommandType::kBeq: {
-      size_t offset = SignExtend(instr.imm_, 16) << 2;
-      bool cond = GetRegister(instr.r1_) == GetRegister(instr.r2_);
-      pc_ = cond ? pc_ + offset : pc_ + sizeof(uint32_t);
+    case CommandType::kBeq:
+      ExecuteBranchEqual(*this, instr);
+      return;
+    case CommandType::kLi:
+      ExecuteLoadImmediate(*this, instr);
       break;
-    }
-
-    case CommandType::kLi: {
-      SetRegister(instr.r1_, SignExtend(instr.imm_, 16));
-      pc_ += sizeof(uint32_t);
+    case CommandType::kSt:
+      ExecuteStore(*this, instr);
       break;
-    }
-
-    case CommandType::kSt: {
-      size_t addr = GetRegister(instr.r1_) + SignExtend(instr.imm_, 14);
-      if (addr % sizeof(uint32_t))
-        throw std::runtime_error("Executor: MisalignedAccess");
-      memory_.Write(addr, GetRegister(instr.r2_));
-      pc_ += sizeof(uint32_t);
+    case CommandType::kStp:
+      ExecuteStorePair(*this, instr);
       break;
-    }
-
-    case CommandType::kStp: {
-      size_t addr = GetRegister(instr.r1_) + SignExtend(instr.imm_, 11);
-      if (addr % sizeof(uint32_t))
-        throw std::runtime_error("Executor: MisalignedAccess");
-      memory_.Write(addr, GetRegister(instr.r2_));
-      memory_.Write(addr + sizeof(uint32_t), GetRegister(instr.r3_));
-      pc_ += sizeof(uint32_t);
+    case CommandType::kAddi:
+      ExecuteAddImmediate(*this, instr);
       break;
-    }
-
-    case CommandType::kAddi: {
-      SetRegister(instr.r2_,
-                  GetRegister(instr.r1_) + SignExtend(instr.imm_, 16));
-      pc_ += sizeof(uint32_t);
+    case CommandType::kJ:
+      ExecuteJump(*this, instr);
+      return;
+    case CommandType::kLdPost:
+      ExecuteLoadPost(*this, instr);
       break;
-    }
-
-    case CommandType::kJ: {
-      pc_ = (pc_ & 0xF0000000) | (instr.imm_ << 2);
+    case CommandType::kNor:
+      ExecuteNor(*this, instr);
       break;
-    }
-
-    case CommandType::kLdPost: {
-      if (GetRegister(instr.r1_) % sizeof(uint32_t))
-        throw std::runtime_error("Executor: MisalignedAccess");
-      SetRegister(instr.r2_, memory_.Read(GetRegister(instr.r1_)));
-      SetRegister(instr.r1_,
-                  GetRegister(instr.r1_) + SignExtend(instr.imm_, 14));
-      pc_ += sizeof(uint32_t);
+    case CommandType::kSsat:
+      ExecuteSaturateSigned(*this, instr);
       break;
-    }
-
-    case CommandType::kNor: {
-      SetRegister(instr.r3_,
-                  ~(GetRegister(instr.r1_) | GetRegister(instr.r2_)));
-      pc_ += sizeof(uint32_t);
+    case CommandType::kRbit:
+      ExecuteReverseBit(*this, instr);
       break;
-    }
-
-    case CommandType::kSsat: {
-      SetRegister(instr.r1_,
-                  SaturateSigned(GetRegister(instr.r2_), instr.imm_));
-      pc_ += sizeof(uint32_t);
+    case CommandType::kSyscall:
+      ExecuteSyscall(*this, instr);
+    case CommandType::kBext:
+      ExecuteBitExtract(*this, instr);
       break;
-    }
-
-    case CommandType::kRbit: {
-      SetRegister(instr.r1_, ReverseBit(GetRegister(instr.r2_)));
-      pc_ += sizeof(uint32_t);
+    case CommandType::kUsat:
+      ExecuteSaturateUnsigned(*this, instr);
       break;
-    }
-
-    case CommandType::kSyscall: {
-      pc_ += sizeof(uint32_t);
-      throw SyscallException(static_cast<Syscalls>(instr.imm_));
-      break;
-    }
-
-    case CommandType::kBext: {
-      SetRegister(instr.r1_,
-                  BitExtract(GetRegister(instr.r2_), GetRegister(instr.r3_)));
-      pc_ += sizeof(uint32_t);
-      break;
-    }
-
-    case CommandType::kUsat: {
-      SetRegister(instr.r1_,
-                  SaturateUnsigned(GetRegister(instr.r2_), instr.imm_));
-      pc_ += sizeof(uint32_t);
-      break;
-    }
-
     case CommandType::kUnknown:
     default:
       assert(0 && "Executor: Unknown instruction");
+      return;
   }
 }
 
