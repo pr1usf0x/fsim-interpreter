@@ -26,7 +26,7 @@ void Kernel::MmapFile(const std::string& filename, uint32_t addr) {
         throw std::runtime_error{"Kernel : file open error"};
     }
     const size_t tmp_max_size = 1024;
-    in.read(memory_.GetDataPtr(addr), tmp_max_size);
+    in.read(reinterpret_cast<char*>(memory_.GetDataPtr(addr)), tmp_max_size);
 }
 
 Syscalls Kernel::HandleSyscall(Syscalls syscall) {

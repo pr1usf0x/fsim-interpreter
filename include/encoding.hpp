@@ -47,6 +47,7 @@ enum class CommandType : uint16_t {
   kBext = ConvertToCommandType(0b000000, 0b100110),
   kUsat = ConvertToCommandType(0b110000, 0b000000),
 };
+
 constexpr bool CheckIfCommandType(uint16_t command_type) {
   switch (static_cast<CommandType>(command_type)) {
     case CommandType::kLd:

@@ -154,18 +154,20 @@ void (*const kHandlers[])(Cpu&, const Instruction*) = {
     [static_cast<size_t>(CommandType::kUsat)] = ExecuteUsat,
 };
 
-constexpr auto kExecuteNext = [](Cpu& cpu, const Instruction* instr) {
-  ++instr;
-  const auto index = static_cast<size_t>(instr->type_);
+
+
+#define DISPATCH()\
+  ++instr;\
+  const auto index = static_cast<size_t>(instr->type_);\
+  [[clang::musttail]]\
   return kHandlers[index](cpu, instr);
-};
 
 void ExecuteLd(Cpu& cpu, const Instruction* instr) {
   size_t addr = cpu.GetRegister(instr->r1_) + SignExtend(instr->imm_, 14);
   CheckAlignment(addr);
   cpu.SetRegister(instr->r2_, cpu.GetMemory().Read(addr));
   cpu.Step();
-  return kExecuteNext(cpu, instr);
+  DISPATCH();
 }
 
 void ExecuteSt(Cpu& cpu, const Instruction* instr) {
@@ -173,7 +175,7 @@ void ExecuteSt(Cpu& cpu, const Instruction* instr) {
   CheckAlignment(addr);
   cpu.GetMemory().Write(addr, cpu.GetRegister(instr->r2_));
   cpu.Step();
-  return kExecuteNext(cpu, instr);
+  DISPATCH();
 }
 
 void ExecuteStp(Cpu& cpu, const Instruction* instr) {
@@ -182,7 +184,7 @@ void ExecuteStp(Cpu& cpu, const Instruction* instr) {
   cpu.GetMemory().Write(addr, cpu.GetRegister(instr->r2_));
   cpu.GetMemory().Write(addr + sizeof(uint32_t), cpu.GetRegister(instr->r3_));
   cpu.Step();
-  return kExecuteNext(cpu, instr);
+  DISPATCH();
 }
 
 void ExecuteLdPost(Cpu& cpu, const Instruction* instr) {
@@ -191,21 +193,20 @@ void ExecuteLdPost(Cpu& cpu, const Instruction* instr) {
   cpu.SetRegister(instr->r1_,
                   cpu.GetRegister(instr->r1_) + SignExtend(instr->imm_, 14));
   cpu.Step();
-  return kExecuteNext(cpu, instr);
+  DISPATCH();
 }
 
 void ExecuteAdd(Cpu& cpu, const Instruction* instr) {
   cpu.SetRegister(instr->r3_,
                   cpu.GetRegister(instr->r1_) + cpu.GetRegister(instr->r2_));
   cpu.Step();
-  return kExecuteNext(cpu, instr);
+  DISPATCH();
 }
 
 void ExecuteBeq(Cpu& cpu, const Instruction* instr) {
-  size_t offset = SignExtend(instr->imm_, 16) << 2;
   bool cond = cpu.GetRegister(instr->r1_) == cpu.GetRegister(instr->r2_);
   if (cond) {
-    cpu.SetRegister(Register::kPc, cpu.GetRegister(Register::kPc) + offset);
+    cpu.SetRegister(Register::kPc, cpu.GetRegister(Register::kPc) + instr->imm_);
   } else {
     cpu.Step();
   }
@@ -214,14 +215,14 @@ void ExecuteBeq(Cpu& cpu, const Instruction* instr) {
 void ExecuteLi(Cpu& cpu, const Instruction* instr) {
   cpu.SetRegister(instr->r1_, SignExtend(instr->imm_, 16));
   cpu.Step();
-  return kExecuteNext(cpu, instr);
+  DISPATCH();
 }
 
 void ExecuteAddi(Cpu& cpu, const Instruction* instr) {
   cpu.SetRegister(instr->r2_,
                   cpu.GetRegister(instr->r1_) + SignExtend(instr->imm_, 16));
   cpu.Step();
-  return kExecuteNext(cpu, instr);
+  DISPATCH();
 }
 
 void ExecuteJ(Cpu& cpu, const Instruction* instr) {
@@ -233,20 +234,20 @@ void ExecuteNor(Cpu& cpu, const Instruction* instr) {
   cpu.SetRegister(instr->r3_,
                   ~(cpu.GetRegister(instr->r1_) | cpu.GetRegister(instr->r2_)));
   cpu.Step();
-  return kExecuteNext(cpu, instr);
+  DISPATCH();
 }
 
 void ExecuteSsat(Cpu& cpu, const Instruction* instr) {
   cpu.SetRegister(instr->r1_,
                   SaturateSigned(cpu.GetRegister(instr->r2_), instr->imm_));
   cpu.Step();
-  return kExecuteNext(cpu, instr);
+  DISPATCH();
 }
 
 void ExecuteRbit(Cpu& cpu, const Instruction* instr) {
   cpu.SetRegister(instr->r1_, ReverseBit(cpu.GetRegister(instr->r2_)));
   cpu.Step();
-  return kExecuteNext(cpu, instr);
+  DISPATCH();
 }
 
 void ExecuteSyscall(Cpu& cpu, const Instruction* instr) {
@@ -258,14 +259,14 @@ void ExecuteBext(Cpu& cpu, const Instruction* instr) {
   cpu.SetRegister(instr->r1_, BitExtract(cpu.GetRegister(instr->r2_),
                                         cpu.GetRegister(instr->r3_)));
   cpu.Step();
-  return kExecuteNext(cpu, instr);
+  DISPATCH();
 }
 
 void ExecuteUsat(Cpu& cpu, const Instruction* instr) {
   cpu.SetRegister(instr->r1_,
                   SaturateUnsigned(cpu.GetRegister(instr->r2_), instr->imm_));
   cpu.Step();
-  return kExecuteNext(cpu, instr);
+  DISPATCH();
 }
 
 void ExecuteUnknown(Cpu&, const Instruction*) {
@@ -320,6 +321,11 @@ Instruction Cpu::Decode(uint32_t instr_code) {
       break;
 
     case CommandType::kBeq:
+      instr.r1_ = DecodeReg1(instr_code);
+      instr.r2_ = DecodeReg2(instr_code);
+      instr.imm_ = GetBits(instr_code, 0, 15) << 2;
+      break;
+
     case CommandType::kAddi:
       instr.r1_ = DecodeReg1(instr_code);
       instr.r2_ = DecodeReg2(instr_code);

@@ -12,10 +12,10 @@ namespace toy_sim {
 
 class Memory {
  public:
-  explicit Memory(size_t mem_size) : mem_size_(mem_size), data_(mem_size) {}
+  explicit Memory(size_t mem_size) : data_(mem_size) {}
 
   uint32_t Read(uint32_t addr) {
-    if (addr > mem_size_ - 4)
+    if (addr > data_.size() - 4)
       throw std::runtime_error("Segfault");
 #if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
     uint32_t ret = static_cast<uint32_t>(data_[addr]) |
@@ -32,7 +32,7 @@ class Memory {
   }
 
   void Write(uint32_t addr, uint32_t var) {
-    if (addr > mem_size_ - 4)
+    if (addr > data_.size() - 4)
       throw std::runtime_error("Segfault");
 #if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
     data_[addr] = static_cast<std::byte>(var);
@@ -44,15 +44,14 @@ class Memory {
 #endif
   }
 
-  char* GetDataPtr(uint32_t addr) {
-    if (addr >= mem_size_)
+  std::byte* GetDataPtr(uint32_t addr) {
+    if (addr >= data_.size())
       throw std::runtime_error("Segfault");
-    return data_.data();
+    return data_.data() + addr;
   }
 
  private:
-  size_t mem_size_{};
-  std::vector<char> data_;
+  std::vector<std::byte> data_;
 };
 }  // namespace toy_sim
 

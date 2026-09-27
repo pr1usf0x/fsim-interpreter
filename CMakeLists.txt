@@ -9,7 +9,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL
 if(MSVC)
     set(CMAKE_CXX_FLAGS "-O2 -Wall")
 else()
-    set(CMAKE_CXX_FLAGS "-O2 -Wall -Wextra")
+    set(CMAKE_CXX_FLAGS "-O2 -Wall -Wextra -std=c++20")
 endif()
 
 set(CMAKE_CXX_STANDARD 20)
@@ -29,8 +29,8 @@ FetchContent_MakeAvailable(googletest)
 # ===== intreptretator =====
 
 add_executable(${TARGET})
-target_include_directories(${TARGET} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-                                             ${CMAKE_CURRENT_SOURCE_DIR}/external/cache/include)
+target_include_directories(${TARGET} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_link_libraries(${TARGET} PRIVATE GTest::gtest)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src)
 
