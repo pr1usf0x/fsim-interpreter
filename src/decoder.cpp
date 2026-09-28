@@ -1,6 +1,8 @@
 #include "cpu/decoder.hpp"
 #include <cassert>
+#include <cstdint>
 #include <stdexcept>
+#include "cpu/cpu.hpp"
 #include "encoding.hpp"
 #include "memory.hpp"
 
@@ -30,37 +32,86 @@ inline Register DecodeReg3(uint32_t word) {
   return static_cast<Register>(GetBits(word, 11, 15));
 }
 
+bool CheckIfCommand(uint32_t word, CommandType type) {
+  const auto full_opcode = kOpcodeExtraArr()[static_cast<size_t>(type)];
+  return (word & full_opcode.mask) == full_opcode.requirements;
+}
+
+const uint8_t kFuncMask = 0b00111111;
+CommandType GetFuncType(uint32_t word) {
+  switch (word & kFuncMask) {
+    case (kOpcodeExtraArr())[static_cast<size_t>(CommandType::kRbit)]
+        .requirements& kFuncMask:
+    return CommandType::kRbit;
+
+    case (kOpcodeExtraArr())[static_cast<size_t>(CommandType::kNor)]
+        .requirements& kFuncMask:
+    return CommandType::kNor;
+
+    case (kOpcodeExtraArr())[static_cast<size_t>(CommandType::kSyscall)]
+        .requirements& kFuncMask:
+    return CommandType::kSyscall;
+
+    case (kOpcodeExtraArr())[static_cast<size_t>(CommandType::kBext)]
+        .requirements& kFuncMask:
+    return CommandType::kBext;
+
+    case (kOpcodeExtraArr())[static_cast<size_t>(CommandType::kAdd)]
+        .requirements& kFuncMask:
+    return CommandType::kAdd;
+
+    default:
+      return CommandType::kUnknown;
+  }
+}
+
 CommandType GetCommandType(uint32_t word) {
-  // [31:26] - opcode
-  // [5:0] - opcode_2 for similar opcodes
   auto opcode = GetBits(word, 26, 31);
-  uint16_t command_type = 0;
+  CommandType command_type = CommandType::kUnknown;
   switch (opcode) {
-    case kLdPost:
-    case kAddi:
-    case kBeq:
-    case kSsat:
     case kLd:
-    case kLi:
-    case kSt:
-    case kUsat:
-    case kJ:
-    case kStp:
-      command_type = ConvertToCommandType(opcode, 0);
+    case kLdPost:
+      if (CheckIfCommand(word, CommandType::kLd))
+        return CommandType::kLd;
+      else if (CheckIfCommand(word, CommandType::kLdPost))
+        return CommandType::kLdPost;
+      else
+        return CommandType::kUnknown;
       break;
-    case kRbit:
-      // case kNor:
-      // case kSyscall:
-      // case kBext:
-      // case kAdd:
-      command_type = ConvertToCommandType(0, GetBits(word, 0, 5));
-      if (CheckIfCommandType(command_type))
-        break;
+    case kAddi:
+      command_type = CommandType::kAddi;
+      break;
+    case kBeq:
+      command_type = CommandType::kBeq;
+      break;
+    case kSsat:
+      command_type = CommandType::kSsat;
+      break;
+    case kLi:
+      command_type = CommandType::kLi;
+      break;
+    case kSt:
+      command_type = CommandType::kSt;
+      break;
+    case kUsat:
+      command_type = CommandType::kUsat;
+      break;
+    case kJ:
+      command_type = CommandType::kJ;
+      break;
+    case kStp:
+      command_type = CommandType::kStp;
+      break;
+    case kRbit: { // всякая такая дичь
+      command_type = GetFuncType(word);
+      break;
+    }
     default:
       return CommandType::kUnknown;
   }
 
-  return static_cast<CommandType>(command_type);
+  return CheckIfCommand(word, command_type) ? command_type
+                                            : CommandType::kUnknown;
 }
 
 bool CheckIfTerminator(Instruction decoded) {
@@ -72,7 +123,7 @@ bool CheckIfTerminator(Instruction decoded) {
 
 // ================================ DECODER ===================================
 
-Instruction Decode(uint32_t instr_code) {
+Instruction Decoder::DecodeInstr(uint32_t instr_code) {
   auto command_type = GetCommandType(instr_code);
   Instruction instr{};
   instr.type_ = command_type;
@@ -81,8 +132,6 @@ Instruction Decode(uint32_t instr_code) {
     case CommandType::kSt:
       instr.r1_ = DecodeReg1(instr_code);
       instr.r2_ = DecodeReg2(instr_code);
-      if (GetBits(instr_code, 14, 15))
-        throw std::runtime_error("Decoder: failed to identify the instruction");
       instr.imm_ = GetBits(instr_code, 0, 13);
       break;
 
@@ -92,8 +141,6 @@ Instruction Decode(uint32_t instr_code) {
       instr.r1_ = DecodeReg1(instr_code);
       instr.r2_ = DecodeReg2(instr_code);
       instr.r3_ = DecodeReg3(instr_code);
-      if (GetBits(instr_code, 6, 10))
-        throw std::runtime_error("Decoder: failed to identify the instruction");
       break;
 
     case CommandType::kBeq:
@@ -109,8 +156,6 @@ Instruction Decode(uint32_t instr_code) {
       break;
 
     case CommandType::kLi:
-      if (GetBits(instr_code, 21, 25))
-        throw std::runtime_error("Decoder: failed to identify the instruction");
       instr.r1_ = DecodeReg2(instr_code);
       instr.imm_ = GetBits(instr_code, 0, 15);
       break;
@@ -129,8 +174,6 @@ Instruction Decode(uint32_t instr_code) {
     case CommandType::kLdPost:
       instr.r1_ = DecodeReg1(instr_code);
       instr.r2_ = DecodeReg2(instr_code);
-      if (GetBits(instr_code, 14, 15) != 0b10)
-        throw std::runtime_error("Decoder: failed to identify the instruction");
       instr.imm_ = GetBits(instr_code, 0, 13);
       break;
 
@@ -139,15 +182,11 @@ Instruction Decode(uint32_t instr_code) {
       instr.r1_ = DecodeReg1(instr_code);
       instr.r2_ = DecodeReg2(instr_code);
       instr.imm_ = GetBits(instr_code, 11, 15);
-      if (GetBits(instr_code, 0, 10))
-        throw std::runtime_error("Decoder: failed to identify the instruction");
       break;
 
     case CommandType::kRbit:
       instr.r1_ = DecodeReg1(instr_code);
       instr.r2_ = DecodeReg2(instr_code);
-      if (GetBits(instr_code, 6, 15))
-        throw std::runtime_error("Decoder: failed to identify the instruction");
       break;
 
     case CommandType::kSyscall:
@@ -161,14 +200,23 @@ Instruction Decode(uint32_t instr_code) {
   return instr;
 }
 
-BasicBlock DecodeBB(Memory& memory, uint32_t pc) {
+BasicBlock Decoder::DecodeBB(uint32_t pc) {
   BasicBlock bb{};
   Instruction decoded{};
   do {
-    decoded = Decode(memory.Read(pc));
+    decoded = DecodeInstr(cpu_.GetMemory().Read(pc));
     bb.push_back(decoded);
     pc += sizeof(uint32_t);
   } while (!CheckIfTerminator(decoded));
   return bb;
+}
+
+const BasicBlock& Decoder::Decode(uint32_t pc) {
+  auto bb = decoder_cache_.find(pc);
+  if (bb == decoder_cache_.end()) {
+    auto decoded_bb = DecodeBB(pc);
+    bb = decoder_cache_.insert(std::make_pair(pc, std::move(decoded_bb))).first;
+  }
+  return bb->second;
 }
 }  // namespace toy_sim

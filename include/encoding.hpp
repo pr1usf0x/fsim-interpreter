@@ -1,12 +1,11 @@
 #ifndef ENCODING_HPP_
 #define ENCODING_HPP_
 
+#include <array>
 #include <cstdint>
 #include <cstdlib>
 
 namespace toy_sim {
-
-using uint32_t = uint32_t;
 
 enum Opcode : uint8_t {
   kLd = 0b010111,
@@ -26,26 +25,65 @@ enum Opcode : uint8_t {
   kUsat = 0b110000,
 };
 
-constexpr uint16_t ConvertToCommandType(uint8_t opcode, uint8_t funct) {
-  return (static_cast<uint16_t>(opcode) << 6) | static_cast<uint16_t>(funct);
-}
-enum class CommandType : uint16_t {
-  kUnknown = ConvertToCommandType(0b000000, 0b000000),
-  kLd = ConvertToCommandType(0b010111, 0b000000),
-  kAdd = ConvertToCommandType(0b000000, 0b011000),
-  kBeq = ConvertToCommandType(0b001101, 0b000000),
-  kLi = ConvertToCommandType(0b101011, 0b000000),
-  kSt = ConvertToCommandType(0b101100, 0b000000),
-  kStp = ConvertToCommandType(0b111111, 0b000000),
-  kAddi = ConvertToCommandType(0b001010, 0b000000),
-  kJ = ConvertToCommandType(0b110111, 0b000000),
-  kLdPost = ConvertToCommandType(0b000111, 0b000000),
-  kNor = ConvertToCommandType(0b000000, 0b101001),
-  kSsat = ConvertToCommandType(0b010100, 0b000000),
-  kRbit = ConvertToCommandType(0b000000, 0b111110),
-  kSyscall = ConvertToCommandType(0b000000, 0b010000),
-  kBext = ConvertToCommandType(0b000000, 0b100110),
-  kUsat = ConvertToCommandType(0b110000, 0b000000),
+enum class CommandType {
+  kUnknown,
+  kLd,
+  kAdd,
+  kBeq,
+  kLi,
+  kSt,
+  kStp,
+  kAddi,
+  kJ,
+  kLdPost,
+  kNor,
+  kSsat,
+  kRbit,
+  kSyscall,
+  kBext,
+  kUsat
+};
+const size_t kInstructionCount = 16;
+
+struct OpcodeExtra {
+  uint32_t mask;
+  uint32_t requirements;
+};
+constexpr const auto kOpcodeExtraArr = [] () {
+  std::array<OpcodeExtra, kInstructionCount> extra_arr = {};
+  extra_arr[static_cast<size_t>(CommandType::kUnknown)] = {
+      .mask=0b00000000000000000000000000000000, .requirements=0b00000000000000000000000000000000};
+  extra_arr[static_cast<size_t>(CommandType::kLd)] = {
+      .mask=0b111111'00000'00000'11'00000000000000, .requirements=0b010111'00000'00000'00'00000000000000};
+  extra_arr[static_cast<size_t>(CommandType::kAdd)] = {
+      .mask=0b111111'00000'00000'00000'11111'111111, .requirements=0b000000'00000'00000'00000'00000'011000};
+  extra_arr[static_cast<size_t>(CommandType::kBeq)] = {
+      .mask=0b111111'00000'00000'0000000000000000, .requirements=0b001101'00000'00000'0000000000000000};
+  extra_arr[static_cast<size_t>(CommandType::kLi)] = {
+      .mask=0b111111'11111'00000'0000000000000000, .requirements=0b101011'00000'00000'0000000000000000};
+  extra_arr[static_cast<size_t>(CommandType::kSt)] = {
+      .mask=0b111111'00000'00000'11'00000000000000, .requirements=0b101100'00000'00000'00'00000000000000};
+  extra_arr[static_cast<size_t>(CommandType::kStp)] = {
+      .mask=0b111111'00000'00000'00000'00000000000, .requirements=0b111111'00000'00000'00000'00000000000};
+  extra_arr[static_cast<size_t>(CommandType::kAddi)] = {
+      .mask=0b111111'00000'00000'0000000000000000, .requirements=0b001010'00000'00000'0000000000000000};
+  extra_arr[static_cast<size_t>(CommandType::kJ)] = {
+      .mask=0b111111'00000000000000000000000000, .requirements=0b110111'00000000000000000000000000};
+  extra_arr[static_cast<size_t>(CommandType::kLdPost)] = {
+      .mask=0b111111'00000'00000'11'00000000000000, .requirements=0b000111'00000'00000'10'00000000000000};
+  extra_arr[static_cast<size_t>(CommandType::kNor)] = {
+      .mask=0b111111'00000'00000'00000'11111'111111, .requirements=0b000000'00000'00000'00000'00000'101001};
+  extra_arr[static_cast<size_t>(CommandType::kSsat)] = {
+      .mask=0b111111'00000'00000'00000'11111111111, .requirements=0b010100'00000'00000'00000'00000000000};
+  extra_arr[static_cast<size_t>(CommandType::kRbit)] = {
+      .mask=0b111111'00000'00000'1111111111'111111, .requirements=0b000000'00000'00000'0000000000'111110};
+  extra_arr[static_cast<size_t>(CommandType::kSyscall)] = {
+      .mask=0b111111'00000000000000000000'111111, .requirements=0b000000'00000000000000000000'010000};
+  extra_arr[static_cast<size_t>(CommandType::kBext)] = {
+      .mask=0b111111'00000'00000'00000'11111'111111, .requirements=0b000000'00000'00000'00000'00000'100110};
+  extra_arr[static_cast<size_t>(CommandType::kUsat)] = {
+      .mask=0b111111'00000'00000'00000'11111111111, .requirements=0b110000'00000'00000'00000'00000000000};
+  return extra_arr;
 };
 
 constexpr bool CheckIfCommandType(uint16_t command_type) {
@@ -106,6 +144,14 @@ enum class Register : uint8_t {
   kX30 = 30,
   kX31 = 31,
   kPc = 32
+};
+
+struct Instruction {
+  CommandType type_;
+  Register r1_;
+  Register r2_;
+  Register r3_;
+  uint32_t imm_;
 };
 }  // namespace toy_sim
 

@@ -7,6 +7,7 @@
 #include <vector>
 #include "cpu/decoder.hpp"
 #include "cpu/executor.hpp"
+#include "encoding.hpp"
 #include "memory.hpp"
 
 namespace toy_sim {
@@ -30,19 +31,17 @@ class Cpu {
   }
 
  private:
-
   std::vector<uint32_t> registers_;
   uint32_t pc_{};
 
   const BasicBlock& Fetch();
 
   Memory& memory_;
-  std::unordered_map<uint32_t, BasicBlock> decoder_cache_;
 };
 
 constexpr auto kHandlers = [] {
-  using handler = void (*) (Cpu&, const Instruction*);
-  std::array<handler, UINT16_MAX> handler_arr= {};
+  using handler = void (*)(Cpu&, const Instruction*);
+  std::array<handler, kInstructionCount> handler_arr = {};
   handler_arr[static_cast<size_t>(CommandType::kUnknown)] = ExecuteUnknown;
   handler_arr[static_cast<size_t>(CommandType::kLd)] = ExecuteLd;
   handler_arr[static_cast<size_t>(CommandType::kAdd)] = ExecuteAdd;

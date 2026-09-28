@@ -2,6 +2,7 @@
 #define CPU_DECODER_HPP_
 
 #include <cstdint>
+#include <unordered_map>
 #include <vector>
 #include "encoding.hpp"
 
@@ -9,18 +10,21 @@ namespace toy_sim {
 
 class Memory;
 
-struct Instruction {
-  CommandType type_;
-  Register r1_;
-  Register r2_;
-  Register r3_;
-  uint32_t imm_;
-};
-
 using BasicBlock = std::vector<Instruction>;
+class Cpu;
 
-Instruction Decode(uint32_t instr);
-BasicBlock DecodeBB(Memory& memory, uint32_t pc);
+class Decoder {
+ public:
+  explicit Decoder(Cpu& cpu) : cpu_(cpu){}
+
+  static Instruction DecodeInstr(uint32_t instr);
+  const BasicBlock& Decode(uint32_t pc);
+
+ private:
+  BasicBlock DecodeBB(uint32_t pc);
+  Cpu& cpu_;
+  std::unordered_map<uint32_t, BasicBlock> decoder_cache_;
+};
 
 }  // namespace toy_sim
 

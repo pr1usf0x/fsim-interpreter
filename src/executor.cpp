@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <utility>
 #include "cpu/cpu.hpp"
+#include "cpu/decoder.hpp"
 #include "encoding.hpp"
 #include "kernel.hpp"
 
@@ -20,7 +21,7 @@ void Cpu::RunProgram() {
 }
 
 namespace {
-inline int32_t SignExtend(uint32_t num, size_t n) {
+inline uint32_t SignExtend(uint32_t num, size_t n) {
   assert(n < 32);
   if (n == 0) return 0;
   n = 32 - n;
@@ -194,11 +195,7 @@ void ExecuteUnknown(Cpu&, const Instruction*) {
 // ================================ FETCH =====================================
 
 const BasicBlock& Cpu::Fetch() {
-  auto bb = decoder_cache_.find(pc_);
-  if (bb == decoder_cache_.end()) {
-    auto decoded_bb = DecodeBB(memory_, pc_);
-    bb = decoder_cache_.insert(std::make_pair(pc_, decoded_bb)).first;
-  }
+
 
   return bb->second;
 }
