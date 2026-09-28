@@ -13,6 +13,7 @@ namespace toy_sim {
 constexpr uint32_t GenOpCode(Opcode op) {
   return static_cast<uint32_t>(op) << 26;
 }
+
 constexpr uint32_t GenReg1(Register reg) {
   assert(static_cast<uint32_t>(reg) < 32);
   return static_cast<uint32_t>(reg) << 21;

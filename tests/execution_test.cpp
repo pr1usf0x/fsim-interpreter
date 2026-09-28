@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <cstddef>
-#include "cpu.hpp"
+#include "cpu/cpu.hpp"
+#include "cpu/executor.hpp"
 #include "encoding.hpp"
 #include "kernel.hpp"
 #include "machine.hpp"
@@ -19,7 +20,7 @@ class FuckedExecutorLdTest : public testing::Test {
     memory_.Write(addr + offset, val);
     cpu_.SetRegister(base, addr);
     size_t old_pc = cpu_.GetRegister(Register::kPc);
-    cpu_.Execute({.type_ = CommandType::kLd,
+    Execute(cpu_, {.type_ = CommandType::kLd,
                   .r1_ = base,
                   .r2_ = target,
                   .r3_ = Register::kX0,
@@ -52,7 +53,7 @@ class FuckedExecutorAddTest : public testing::Test {
     cpu_.SetRegister(rs, val1);
     cpu_.SetRegister(rt, val2);
     size_t old_pc = cpu_.GetRegister(Register::kPc);
-    cpu_.Execute({.type_ = CommandType::kAdd,
+    Execute(cpu_, {.type_ = CommandType::kAdd,
                   .r1_ = rs,
                   .r2_ = rt,
                   .r3_ = rd,
@@ -85,7 +86,7 @@ class FuckedExecutorBeqTest : public testing::Test {
     cpu_.SetRegister(Register::kPc, pc_val);
     cpu_.SetRegister(rs, val1);
     cpu_.SetRegister(rt, val2);
-    cpu_.Execute({.type_ = CommandType::kBeq,
+    Execute(cpu_, {.type_ = CommandType::kBeq,
                   .r1_ = rs,
                   .r2_ = rt,
                   .r3_ = Register::kX0,
@@ -121,7 +122,7 @@ class FuckedExecutorStTest : public testing::Test {
     cpu_.SetRegister(base, addr);
     cpu_.SetRegister(rt, val);
     size_t old_pc = cpu_.GetRegister(Register::kPc);
-    cpu_.Execute({.type_ = CommandType::kSt,
+    Execute(cpu_, {.type_ = CommandType::kSt,
                   .r1_ = base,
                   .r2_ = rt,
                   .r3_ = Register::kX0,
@@ -155,7 +156,7 @@ class FuckedStpTest : public testing::Test {
     cpu_.SetRegister(rt1, val1);
     cpu_.SetRegister(rt2, val2);
     size_t old_pc = cpu_.GetRegister(Register::kPc);
-    cpu_.Execute({.type_ = CommandType::kStp,
+    Execute(cpu_, {.type_ = CommandType::kStp,
                   .r1_ = base,
                   .r2_ = rt1,
                   .r3_ = rt2,
@@ -188,7 +189,7 @@ class FuckedAddiTest : public testing::Test {
   void Test(uint32_t val, Register rs, Register rt, uint32_t imm) {
     cpu_.SetRegister(rs, val);
     size_t old_pc = cpu_.GetRegister(Register::kPc);
-    cpu_.Execute({.type_ = CommandType::kAddi,
+    Execute(cpu_, {.type_ = CommandType::kAddi,
                   .r1_ = rs,
                   .r2_ = rt,
                   .r3_ = Register::kX0,
@@ -218,7 +219,7 @@ class FuckedJTest : public testing::Test {
  protected:
   void Test(uint32_t pc, uint32_t index) {
     cpu_.SetRegister(Register::kPc, pc);
-    cpu_.Execute({.type_ = CommandType::kJ,
+    Execute(cpu_, {.type_ = CommandType::kJ,
                   .r1_ = Register::kX0,
                   .r2_ = Register::kX0,
                   .r3_ = Register::kX0,
@@ -251,7 +252,7 @@ class FuckedExecutorLdPostTest : public testing::Test {
     memory_.Write(addr, val);
     cpu_.SetRegister(base, addr);
     size_t old_pc = cpu_.GetRegister(Register::kPc);
-    cpu_.Execute({.type_ = CommandType::kLdPost,
+    Execute(cpu_, {.type_ = CommandType::kLdPost,
                   .r1_ = base,
                   .r2_ = rt,
                   .r3_ = Register::kX0,
@@ -285,7 +286,7 @@ class FuckedNorTest : public testing::Test {
     cpu_.SetRegister(rs, val1);
     cpu_.SetRegister(rt, val2);
     size_t old_pc = cpu_.GetRegister(Register::kPc);
-    cpu_.Execute({.type_ = CommandType::kNor,
+    Execute(cpu_, {.type_ = CommandType::kNor,
                   .r1_ = rs,
                   .r2_ = rt,
                   .r3_ = rd,
@@ -319,7 +320,7 @@ TEST_F(FuckedNorTest, NorTest4) {
 class FuckedSyscallTest : public testing::Test {
  protected:
   void Test(Syscalls syscall_num) {
-    EXPECT_THROW(cpu_.Execute({.type_ = CommandType::kSyscall,
+    EXPECT_THROW(Execute(cpu_, {.type_ = CommandType::kSyscall,
                                .r1_ = Register::kX0,
                                .r2_ = Register::kX0,
                                .r3_ = Register::kX0,

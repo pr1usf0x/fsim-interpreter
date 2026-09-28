@@ -1,4 +1,4 @@
-#include "cpu.hpp"
+#include "cpu/decoder.hpp"
 #include "encoding.hpp"
 #include "microasm.hpp"
 
@@ -23,7 +23,7 @@ TEST_F(FuckedDecoderTest, LdTest1) {
                      .r2_ = Register::kX18,
                      .r3_ = Register::kX0,
                      .imm_ = 666};
-  Instruction out = Cpu::Decode(GenLdInstr(ref.r1_, ref.r2_, ref.imm_));
+  Instruction out = Decode(GenLdInstr(ref.r1_, ref.r2_, ref.imm_));
   Test(out, ref);
 };
 
@@ -33,7 +33,7 @@ TEST_F(FuckedDecoderTest, LdTest2) {
                      .r2_ = Register::kX4,
                      .r3_ = Register::kX0,
                      .imm_ = 1337};
-  Instruction out = Cpu::Decode(GenLdInstr(ref.r1_, ref.r2_, ref.imm_));
+  Instruction out = Decode(GenLdInstr(ref.r1_, ref.r2_, ref.imm_));
   Test(out, ref);
 };
 
@@ -43,7 +43,7 @@ TEST_F(FuckedDecoderTest, LdTest3) {
                      .r2_ = Register::kX18,
                      .r3_ = Register::kX0,
                      .imm_ = 666};
-  Instruction out = Cpu::Decode(GenLdInstr(ref.r1_, ref.r2_, ref.imm_));
+  Instruction out = Decode(GenLdInstr(ref.r1_, ref.r2_, ref.imm_));
   Test(out, ref);
 };
 
@@ -53,7 +53,7 @@ TEST_F(FuckedDecoderTest, LdTest4) {
                      .r2_ = Register::kX18,
                      .r3_ = Register::kX0,
                      .imm_ = 67};
-  Instruction out = Cpu::Decode(GenLdInstr(ref.r1_, ref.r2_, ref.imm_));
+  Instruction out = Decode(GenLdInstr(ref.r1_, ref.r2_, ref.imm_));
   Test(out, ref);
 };
 
@@ -63,7 +63,7 @@ TEST_F(FuckedDecoderTest, AddTest1) {
                      .r2_ = Register::kX18,
                      .r3_ = Register::kX23,
                      .imm_ = 0};
-  Instruction out = Cpu::Decode(GenAddInstr(ref.r1_, ref.r2_, ref.r3_));
+  Instruction out = Decode(GenAddInstr(ref.r1_, ref.r2_, ref.r3_));
   Test(out, ref);
 };
 
@@ -73,7 +73,7 @@ TEST_F(FuckedDecoderTest, AddTest2) {
                      .r2_ = Register::kX4,
                      .r3_ = Register::kX30,
                      .imm_ = 0};
-  Instruction out = Cpu::Decode(GenAddInstr(ref.r1_, ref.r2_, ref.r3_));
+  Instruction out = Decode(GenAddInstr(ref.r1_, ref.r2_, ref.r3_));
   Test(out, ref);
 };
 
@@ -83,7 +83,7 @@ TEST_F(FuckedDecoderTest, AddTest3) {
                      .r2_ = Register::kX9,
                      .r3_ = Register::kX16,
                      .imm_ = 0};
-  Instruction out = Cpu::Decode(GenAddInstr(ref.r1_, ref.r2_, ref.r3_));
+  Instruction out = Decode(GenAddInstr(ref.r1_, ref.r2_, ref.r3_));
   Test(out, ref);
 };
 
@@ -93,7 +93,7 @@ TEST_F(FuckedDecoderTest, AddTest4) {
                      .r2_ = Register::kX18,
                      .r3_ = Register::kX20,
                      .imm_ = 0};
-  Instruction out = Cpu::Decode(GenAddInstr(ref.r1_, ref.r2_, ref.r3_));
+  Instruction out = Decode(GenAddInstr(ref.r1_, ref.r2_, ref.r3_));
   Test(out, ref);
 };
 
@@ -103,7 +103,7 @@ TEST_F(FuckedDecoderTest, BeqTest1) {
                      .r2_ = Register::kX18,
                      .r3_ = Register::kX0,
                      .imm_ = 666};
-  Instruction out = Cpu::Decode(GenBeqInstr(ref.r1_, ref.r2_, ref.imm_));
+  Instruction out = Decode(GenBeqInstr(ref.r1_, ref.r2_, ref.imm_));
   ref.imm_ <<= 2;  // Decoded branch offsets are in bytes.
   Test(out, ref);
 };
@@ -114,7 +114,7 @@ TEST_F(FuckedDecoderTest, BeqTest2) {
                      .r2_ = Register::kX4,
                      .r3_ = Register::kX0,
                      .imm_ = 0xFFFF};
-  Instruction out = Cpu::Decode(GenBeqInstr(ref.r1_, ref.r2_, ref.imm_));
+  Instruction out = Decode(GenBeqInstr(ref.r1_, ref.r2_, ref.imm_));
   ref.imm_ <<= 2;
   Test(out, ref);
 };
@@ -125,7 +125,7 @@ TEST_F(FuckedDecoderTest, BeqTest3) {
                      .r2_ = Register::kX9,
                      .r3_ = Register::kX0,
                      .imm_ = 6767};
-  Instruction out = Cpu::Decode(GenBeqInstr(ref.r1_, ref.r2_, ref.imm_));
+  Instruction out = Decode(GenBeqInstr(ref.r1_, ref.r2_, ref.imm_));
   ref.imm_ <<= 2;
   Test(out, ref);
 };
@@ -136,7 +136,7 @@ TEST_F(FuckedDecoderTest, BeqTest4) {
                      .r2_ = Register::kX18,
                      .r3_ = Register::kX0,
                      .imm_ = 0};
-  Instruction out = Cpu::Decode(GenBeqInstr(ref.r1_, ref.r2_, ref.imm_));
+  Instruction out = Decode(GenBeqInstr(ref.r1_, ref.r2_, ref.imm_));
   ref.imm_ <<= 2;
   Test(out, ref);
 };
@@ -147,7 +147,7 @@ TEST_F(FuckedDecoderTest, LiTest1) {
                      .r2_ = Register::kX0,
                      .r3_ = Register::kX0,
                      .imm_ = 666};
-  Instruction out = Cpu::Decode(GenLiInstr(ref.r1_, ref.imm_));
+  Instruction out = Decode(GenLiInstr(ref.r1_, ref.imm_));
   Test(out, ref);
 };
 
@@ -157,7 +157,7 @@ TEST_F(FuckedDecoderTest, LiTest2) {
                      .r2_ = Register::kX0,
                      .r3_ = Register::kX0,
                      .imm_ = 0xFFFF};
-  Instruction out = Cpu::Decode(GenLiInstr(ref.r1_, ref.imm_));
+  Instruction out = Decode(GenLiInstr(ref.r1_, ref.imm_));
   Test(out, ref);
 };
 
@@ -167,7 +167,7 @@ TEST_F(FuckedDecoderTest, LiTest3) {
                      .r2_ = Register::kX0,
                      .r3_ = Register::kX0,
                      .imm_ = 6767};
-  Instruction out = Cpu::Decode(GenLiInstr(ref.r1_, ref.imm_));
+  Instruction out = Decode(GenLiInstr(ref.r1_, ref.imm_));
   Test(out, ref);
 };
 
@@ -177,7 +177,7 @@ TEST_F(FuckedDecoderTest, LiTest4) {
                      .r2_ = Register::kX0,
                      .r3_ = Register::kX0,
                      .imm_ = 0};
-  Instruction out = Cpu::Decode(GenLiInstr(ref.r1_, ref.imm_));
+  Instruction out = Decode(GenLiInstr(ref.r1_, ref.imm_));
   Test(out, ref);
 };
 
@@ -187,7 +187,7 @@ TEST_F(FuckedDecoderTest, StTest1) {
                      .r2_ = Register::kX23,
                      .r3_ = Register::kX0,
                      .imm_ = 666};
-  Instruction out = Cpu::Decode(GenStInstr(ref.r1_, ref.r2_, ref.imm_));
+  Instruction out = Decode(GenStInstr(ref.r1_, ref.r2_, ref.imm_));
   Test(out, ref);
 };
 
@@ -197,7 +197,7 @@ TEST_F(FuckedDecoderTest, StTest2) {
                      .r2_ = Register::kX23,
                      .r3_ = Register::kX0,
                      .imm_ = 0x1FFF};
-  Instruction out = Cpu::Decode(GenStInstr(ref.r1_, ref.r2_, ref.imm_));
+  Instruction out = Decode(GenStInstr(ref.r1_, ref.r2_, ref.imm_));
   Test(out, ref);
 };
 
@@ -207,7 +207,7 @@ TEST_F(FuckedDecoderTest, StTest3) {
                      .r2_ = Register::kX1,
                      .r3_ = Register::kX0,
                      .imm_ = 6767};
-  Instruction out = Cpu::Decode(GenStInstr(ref.r1_, ref.r2_, ref.imm_));
+  Instruction out = Decode(GenStInstr(ref.r1_, ref.r2_, ref.imm_));
   Test(out, ref);
 };
 
@@ -217,7 +217,7 @@ TEST_F(FuckedDecoderTest, StTest4) {
                      .r2_ = Register::kX31,
                      .r3_ = Register::kX0,
                      .imm_ = 0};
-  Instruction out = Cpu::Decode(GenStInstr(ref.r1_, ref.r2_, ref.imm_));
+  Instruction out = Decode(GenStInstr(ref.r1_, ref.r2_, ref.imm_));
   Test(out, ref);
 };
 
@@ -228,7 +228,7 @@ TEST_F(FuckedDecoderTest, StpTest1) {
                      .r3_ = Register::kX23,
                      .imm_ = 666};
   Instruction out =
-      Cpu::Decode(GenStpInstr(ref.r1_, ref.r2_, ref.r3_, ref.imm_));
+      Decode(GenStpInstr(ref.r1_, ref.r2_, ref.r3_, ref.imm_));
   Test(out, ref);
 };
 
@@ -239,7 +239,7 @@ TEST_F(FuckedDecoderTest, StpTest2) {
                      .r3_ = Register::kX30,
                      .imm_ = 0x7FF};
   Instruction out =
-      Cpu::Decode(GenStpInstr(ref.r1_, ref.r2_, ref.r3_, ref.imm_));
+      Decode(GenStpInstr(ref.r1_, ref.r2_, ref.r3_, ref.imm_));
   Test(out, ref);
 };
 
@@ -250,7 +250,7 @@ TEST_F(FuckedDecoderTest, StpTest3) {
                      .r3_ = Register::kX16,
                      .imm_ = 0x400};
   Instruction out =
-      Cpu::Decode(GenStpInstr(ref.r1_, ref.r2_, ref.r3_, ref.imm_));
+      Decode(GenStpInstr(ref.r1_, ref.r2_, ref.r3_, ref.imm_));
   Test(out, ref);
 };
 
@@ -261,7 +261,7 @@ TEST_F(FuckedDecoderTest, StpTest4) {
                      .r3_ = Register::kX0,
                      .imm_ = 0};
   Instruction out =
-      Cpu::Decode(GenStpInstr(ref.r1_, ref.r2_, ref.r3_, ref.imm_));
+      Decode(GenStpInstr(ref.r1_, ref.r2_, ref.r3_, ref.imm_));
   Test(out, ref);
 };
 
@@ -271,7 +271,7 @@ TEST_F(FuckedDecoderTest, AddiTest1) {
                      .r2_ = Register::kX18,
                      .r3_ = Register::kX0,
                      .imm_ = 666};
-  Instruction out = Cpu::Decode(GenAddiInstr(ref.r1_, ref.r2_, ref.imm_));
+  Instruction out = Decode(GenAddiInstr(ref.r1_, ref.r2_, ref.imm_));
   Test(out, ref);
 };
 
@@ -281,7 +281,7 @@ TEST_F(FuckedDecoderTest, AddiTest2) {
                      .r2_ = Register::kX4,
                      .r3_ = Register::kX0,
                      .imm_ = 0xFFFF};
-  Instruction out = Cpu::Decode(GenAddiInstr(ref.r1_, ref.r2_, ref.imm_));
+  Instruction out = Decode(GenAddiInstr(ref.r1_, ref.r2_, ref.imm_));
   Test(out, ref);
 };
 
@@ -291,7 +291,7 @@ TEST_F(FuckedDecoderTest, AddiTest3) {
                      .r2_ = Register::kX9,
                      .r3_ = Register::kX0,
                      .imm_ = 0x8000};
-  Instruction out = Cpu::Decode(GenAddiInstr(ref.r1_, ref.r2_, ref.imm_));
+  Instruction out = Decode(GenAddiInstr(ref.r1_, ref.r2_, ref.imm_));
   Test(out, ref);
 };
 
@@ -301,7 +301,7 @@ TEST_F(FuckedDecoderTest, AddiTest4) {
                      .r2_ = Register::kX31,
                      .r3_ = Register::kX0,
                      .imm_ = 0};
-  Instruction out = Cpu::Decode(GenAddiInstr(ref.r1_, ref.r2_, ref.imm_));
+  Instruction out = Decode(GenAddiInstr(ref.r1_, ref.r2_, ref.imm_));
   Test(out, ref);
 };
 
@@ -311,7 +311,7 @@ TEST_F(FuckedDecoderTest, JTest1) {
                      .r2_ = Register::kX0,
                      .r3_ = Register::kX0,
                      .imm_ = 666};
-  Instruction out = Cpu::Decode(GenJInstr(ref.imm_));
+  Instruction out = Decode(GenJInstr(ref.imm_));
   Test(out, ref);
 };
 
@@ -321,7 +321,7 @@ TEST_F(FuckedDecoderTest, JTest2) {
                      .r2_ = Register::kX0,
                      .r3_ = Register::kX0,
                      .imm_ = 0x676767};
-  Instruction out = Cpu::Decode(GenJInstr(ref.imm_));
+  Instruction out = Decode(GenJInstr(ref.imm_));
   Test(out, ref);
 };
 
@@ -331,7 +331,7 @@ TEST_F(FuckedDecoderTest, JTest3) {
                      .r2_ = Register::kX0,
                      .r3_ = Register::kX0,
                      .imm_ = 0x2000000};
-  Instruction out = Cpu::Decode(GenJInstr(ref.imm_));
+  Instruction out = Decode(GenJInstr(ref.imm_));
   Test(out, ref);
 };
 
@@ -341,7 +341,7 @@ TEST_F(FuckedDecoderTest, JTest4) {
                      .r2_ = Register::kX0,
                      .r3_ = Register::kX0,
                      .imm_ = 0};
-  Instruction out = Cpu::Decode(GenJInstr(ref.imm_));
+  Instruction out = Decode(GenJInstr(ref.imm_));
   Test(out, ref);
 };
 
@@ -351,7 +351,7 @@ TEST_F(FuckedDecoderTest, LdPostTest1) {
                      .r2_ = Register::kX18,
                      .r3_ = Register::kX0,
                      .imm_ = 666};
-  Instruction out = Cpu::Decode(GenLdPostInstr(ref.r1_, ref.r2_, ref.imm_));
+  Instruction out = Decode(GenLdPostInstr(ref.r1_, ref.r2_, ref.imm_));
   Test(out, ref);
 };
 
@@ -361,7 +361,7 @@ TEST_F(FuckedDecoderTest, LdPostTest2) {
                      .r2_ = Register::kX4,
                      .r3_ = Register::kX0,
                      .imm_ = 0x3FFF};
-  Instruction out = Cpu::Decode(GenLdPostInstr(ref.r1_, ref.r2_, ref.imm_));
+  Instruction out = Decode(GenLdPostInstr(ref.r1_, ref.r2_, ref.imm_));
   Test(out, ref);
 };
 
@@ -371,7 +371,7 @@ TEST_F(FuckedDecoderTest, LdPostTest3) {
                      .r2_ = Register::kX9,
                      .r3_ = Register::kX0,
                      .imm_ = 0x2000};
-  Instruction out = Cpu::Decode(GenLdPostInstr(ref.r1_, ref.r2_, ref.imm_));
+  Instruction out = Decode(GenLdPostInstr(ref.r1_, ref.r2_, ref.imm_));
   Test(out, ref);
 };
 
@@ -381,7 +381,7 @@ TEST_F(FuckedDecoderTest, LdPostTest4) {
                      .r2_ = Register::kX31,
                      .r3_ = Register::kX0,
                      .imm_ = 67};
-  Instruction out = Cpu::Decode(GenLdPostInstr(ref.r1_, ref.r2_, ref.imm_));
+  Instruction out = Decode(GenLdPostInstr(ref.r1_, ref.r2_, ref.imm_));
   Test(out, ref);
 };
 
@@ -391,7 +391,7 @@ TEST_F(FuckedDecoderTest, NorTest1) {
                      .r2_ = Register::kX18,
                      .r3_ = Register::kX23,
                      .imm_ = 0};
-  Instruction out = Cpu::Decode(GenNorInstr(ref.r1_, ref.r2_, ref.r3_));
+  Instruction out = Decode(GenNorInstr(ref.r1_, ref.r2_, ref.r3_));
   Test(out, ref);
 };
 
@@ -401,7 +401,7 @@ TEST_F(FuckedDecoderTest, NorTest2) {
                      .r2_ = Register::kX4,
                      .r3_ = Register::kX30,
                      .imm_ = 0};
-  Instruction out = Cpu::Decode(GenNorInstr(ref.r1_, ref.r2_, ref.r3_));
+  Instruction out = Decode(GenNorInstr(ref.r1_, ref.r2_, ref.r3_));
   Test(out, ref);
 };
 
@@ -411,7 +411,7 @@ TEST_F(FuckedDecoderTest, NorTest3) {
                      .r2_ = Register::kX9,
                      .r3_ = Register::kX16,
                      .imm_ = 0};
-  Instruction out = Cpu::Decode(GenNorInstr(ref.r1_, ref.r2_, ref.r3_));
+  Instruction out = Decode(GenNorInstr(ref.r1_, ref.r2_, ref.r3_));
   Test(out, ref);
 };
 
@@ -421,7 +421,7 @@ TEST_F(FuckedDecoderTest, NorTest4) {
                      .r2_ = Register::kX31,
                      .r3_ = Register::kX0,
                      .imm_ = 0};
-  Instruction out = Cpu::Decode(GenNorInstr(ref.r1_, ref.r2_, ref.r3_));
+  Instruction out = Decode(GenNorInstr(ref.r1_, ref.r2_, ref.r3_));
   Test(out, ref);
 };
 
@@ -431,7 +431,7 @@ TEST_F(FuckedDecoderTest, SsatTest1) {
                      .r2_ = Register::kX23,
                      .r3_ = Register::kX0,
                      .imm_ = 6};
-  Instruction out = Cpu::Decode(GenSsatInstr(ref.r1_, ref.r2_, ref.imm_));
+  Instruction out = Decode(GenSsatInstr(ref.r1_, ref.r2_, ref.imm_));
   Test(out, ref);
 };
 
@@ -441,7 +441,7 @@ TEST_F(FuckedDecoderTest, SsatTest2) {
                      .r2_ = Register::kX4,
                      .r3_ = Register::kX0,
                      .imm_ = 31};
-  Instruction out = Cpu::Decode(GenSsatInstr(ref.r1_, ref.r2_, ref.imm_));
+  Instruction out = Decode(GenSsatInstr(ref.r1_, ref.r2_, ref.imm_));
   Test(out, ref);
 };
 
@@ -451,7 +451,7 @@ TEST_F(FuckedDecoderTest, SsatTest3) {
                      .r2_ = Register::kX9,
                      .r3_ = Register::kX0,
                      .imm_ = 16};
-  Instruction out = Cpu::Decode(GenSsatInstr(ref.r1_, ref.r2_, ref.imm_));
+  Instruction out = Decode(GenSsatInstr(ref.r1_, ref.r2_, ref.imm_));
   Test(out, ref);
 };
 
@@ -461,7 +461,7 @@ TEST_F(FuckedDecoderTest, SsatTest4) {
                      .r2_ = Register::kX31,
                      .r3_ = Register::kX0,
                      .imm_ = 0};
-  Instruction out = Cpu::Decode(GenSsatInstr(ref.r1_, ref.r2_, ref.imm_));
+  Instruction out = Decode(GenSsatInstr(ref.r1_, ref.r2_, ref.imm_));
   Test(out, ref);
 };
 
@@ -471,7 +471,7 @@ TEST_F(FuckedDecoderTest, RbitTest1) {
                      .r2_ = Register::kX23,
                      .r3_ = Register::kX0,
                      .imm_ = 0};
-  Instruction out = Cpu::Decode(GenRbitInstr(ref.r1_, ref.r2_));
+  Instruction out = Decode(GenRbitInstr(ref.r1_, ref.r2_));
   Test(out, ref);
 };
 
@@ -481,7 +481,7 @@ TEST_F(FuckedDecoderTest, RbitTest2) {
                      .r2_ = Register::kX4,
                      .r3_ = Register::kX0,
                      .imm_ = 0};
-  Instruction out = Cpu::Decode(GenRbitInstr(ref.r1_, ref.r2_));
+  Instruction out = Decode(GenRbitInstr(ref.r1_, ref.r2_));
   Test(out, ref);
 };
 
@@ -491,7 +491,7 @@ TEST_F(FuckedDecoderTest, RbitTest3) {
                      .r2_ = Register::kX9,
                      .r3_ = Register::kX0,
                      .imm_ = 0};
-  Instruction out = Cpu::Decode(GenRbitInstr(ref.r1_, ref.r2_));
+  Instruction out = Decode(GenRbitInstr(ref.r1_, ref.r2_));
   Test(out, ref);
 };
 
@@ -501,7 +501,7 @@ TEST_F(FuckedDecoderTest, RbitTest4) {
                      .r2_ = Register::kX31,
                      .r3_ = Register::kX0,
                      .imm_ = 0};
-  Instruction out = Cpu::Decode(GenRbitInstr(ref.r1_, ref.r2_));
+  Instruction out = Decode(GenRbitInstr(ref.r1_, ref.r2_));
   Test(out, ref);
 };
 
@@ -511,7 +511,7 @@ TEST_F(FuckedDecoderTest, SyscallTest1) {
                      .r2_ = Register::kX0,
                      .r3_ = Register::kX0,
                      .imm_ = 666};
-  Instruction out = Cpu::Decode(GenSyscallInstr(ref.imm_));
+  Instruction out = Decode(GenSyscallInstr(ref.imm_));
   Test(out, ref);
 };
 
@@ -521,7 +521,7 @@ TEST_F(FuckedDecoderTest, SyscallTest2) {
                      .r2_ = Register::kX0,
                      .r3_ = Register::kX0,
                      .imm_ = 1488};
-  Instruction out = Cpu::Decode(GenSyscallInstr(ref.imm_));
+  Instruction out = Decode(GenSyscallInstr(ref.imm_));
   Test(out, ref);
 };
 
@@ -531,7 +531,7 @@ TEST_F(FuckedDecoderTest, SyscallTest3) {
                      .r2_ = Register::kX0,
                      .r3_ = Register::kX0,
                      .imm_ = 0x80000};
-  Instruction out = Cpu::Decode(GenSyscallInstr(ref.imm_));
+  Instruction out = Decode(GenSyscallInstr(ref.imm_));
   Test(out, ref);
 };
 
@@ -541,7 +541,7 @@ TEST_F(FuckedDecoderTest, SyscallTest4) {
                      .r2_ = Register::kX0,
                      .r3_ = Register::kX0,
                      .imm_ = 0};
-  Instruction out = Cpu::Decode(GenSyscallInstr(ref.imm_));
+  Instruction out = Decode(GenSyscallInstr(ref.imm_));
   Test(out, ref);
 };
 
@@ -551,7 +551,7 @@ TEST_F(FuckedDecoderTest, BextTest1) {
                      .r2_ = Register::kX18,
                      .r3_ = Register::kX23,
                      .imm_ = 0};
-  Instruction out = Cpu::Decode(GenBextInstr(ref.r1_, ref.r2_, ref.r3_));
+  Instruction out = Decode(GenBextInstr(ref.r1_, ref.r2_, ref.r3_));
   Test(out, ref);
 };
 
@@ -561,7 +561,7 @@ TEST_F(FuckedDecoderTest, BextTest2) {
                      .r2_ = Register::kX4,
                      .r3_ = Register::kX30,
                      .imm_ = 0};
-  Instruction out = Cpu::Decode(GenBextInstr(ref.r1_, ref.r2_, ref.r3_));
+  Instruction out = Decode(GenBextInstr(ref.r1_, ref.r2_, ref.r3_));
   Test(out, ref);
 };
 
@@ -571,7 +571,7 @@ TEST_F(FuckedDecoderTest, BextTest3) {
                      .r2_ = Register::kX9,
                      .r3_ = Register::kX16,
                      .imm_ = 0};
-  Instruction out = Cpu::Decode(GenBextInstr(ref.r1_, ref.r2_, ref.r3_));
+  Instruction out = Decode(GenBextInstr(ref.r1_, ref.r2_, ref.r3_));
   Test(out, ref);
 };
 
@@ -581,7 +581,7 @@ TEST_F(FuckedDecoderTest, BextTest4) {
                      .r2_ = Register::kX31,
                      .r3_ = Register::kX0,
                      .imm_ = 0};
-  Instruction out = Cpu::Decode(GenBextInstr(ref.r1_, ref.r2_, ref.r3_));
+  Instruction out = Decode(GenBextInstr(ref.r1_, ref.r2_, ref.r3_));
   Test(out, ref);
 };
 
@@ -591,7 +591,7 @@ TEST_F(FuckedDecoderTest, UsatTest1) {
                      .r2_ = Register::kX23,
                      .r3_ = Register::kX0,
                      .imm_ = 6};
-  Instruction out = Cpu::Decode(GenUsatInstr(ref.r1_, ref.r2_, ref.imm_));
+  Instruction out = Decode(GenUsatInstr(ref.r1_, ref.r2_, ref.imm_));
   Test(out, ref);
 };
 
@@ -601,7 +601,7 @@ TEST_F(FuckedDecoderTest, UsatTest2) {
                      .r2_ = Register::kX4,
                      .r3_ = Register::kX0,
                      .imm_ = 31};
-  Instruction out = Cpu::Decode(GenUsatInstr(ref.r1_, ref.r2_, ref.imm_));
+  Instruction out = Decode(GenUsatInstr(ref.r1_, ref.r2_, ref.imm_));
   Test(out, ref);
 };
 
@@ -611,7 +611,7 @@ TEST_F(FuckedDecoderTest, UsatTest3) {
                      .r2_ = Register::kX9,
                      .r3_ = Register::kX0,
                      .imm_ = 16};
-  Instruction out = Cpu::Decode(GenUsatInstr(ref.r1_, ref.r2_, ref.imm_));
+  Instruction out = Decode(GenUsatInstr(ref.r1_, ref.r2_, ref.imm_));
   Test(out, ref);
 };
 
@@ -621,7 +621,7 @@ TEST_F(FuckedDecoderTest, UsatTest4) {
                      .r2_ = Register::kX31,
                      .r3_ = Register::kX0,
                      .imm_ = 0};
-  Instruction out = Cpu::Decode(GenUsatInstr(ref.r1_, ref.r2_, ref.imm_));
+  Instruction out = Decode(GenUsatInstr(ref.r1_, ref.r2_, ref.imm_));
   Test(out, ref);
 };
 

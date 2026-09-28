@@ -1,6 +1,7 @@
 set(TEST_TARGET_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/decoder_test.cpp
                         ${CMAKE_CURRENT_SOURCE_DIR}/execution_test.cpp
-                        ${PROJECT_SOURCE_DIR}/src/cpu.cpp)
+                        ${PROJECT_SOURCE_DIR}/src/executor.cpp
+                        ${PROJECT_SOURCE_DIR}/src/decoder.cpp)
 include(GoogleTest)
 
 set(TEST_TARGET toy_vm_test)

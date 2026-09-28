@@ -2,7 +2,7 @@
 #define MACHINE_HPP_
 
 #include <cassert>
-#include "cpu.hpp"
+#include "cpu/cpu.hpp"
 #include "encoding.hpp"
 #include "kernel.hpp"
 #include "memory.hpp"

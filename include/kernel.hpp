@@ -1,19 +1,20 @@
 #ifndef KERNEL_HPP_
 #define KERNEL_HPP_
 
-#include "cpu.hpp"
+#include "cpu/cpu.hpp"
 #include "encoding.hpp"
 #include "memory.hpp"
 
 namespace toy_sim {
 
-enum class Syscalls {
-  kReturnToExecution = 0,
-  kUnknownSyscall = 1,
-  kPrintUnsigned = 2,
-  kScanUnsigned = 3,
-  kAbort = 4,
-  kExit = 67,
+enum class Syscalls : uint16_t {
+  kScanUnsigned = 0,
+  kPrintUnsigned = 1,
+  kExit = 60,
+  kAbort = 61,
+
+  kReturnToExecution = 0xFFFF - 1,
+  kUnknownSyscall = 0xFFFF,
 };
 
 struct SyscallException {
