@@ -81,7 +81,7 @@ TEST_F(FuckedExecutorAddTest, AddTest4) {
 class FuckedExecutorBeqTest : public testing::Test {
  protected:
   void Test(uint32_t pc_val, uint32_t val1, uint32_t val2, Register rs,
-            Register rt, int32_t offset) {
+            Register rt, int32_t byte_offset) {
     cpu_.SetRegister(Register::kPc, pc_val);
     cpu_.SetRegister(rs, val1);
     cpu_.SetRegister(rt, val2);
@@ -89,9 +89,9 @@ class FuckedExecutorBeqTest : public testing::Test {
                   .r1_ = rs,
                   .r2_ = rt,
                   .r3_ = Register::kX0,
-                  .imm_ = static_cast<uint32_t>(offset)});
+                  .imm_ = static_cast<uint32_t>(byte_offset)});
     if (val1 == val2) {
-      EXPECT_EQ(cpu_.GetRegister(Register::kPc), pc_val + offset * 4);
+      EXPECT_EQ(cpu_.GetRegister(Register::kPc), pc_val + byte_offset);
     } else {
       EXPECT_EQ(cpu_.GetRegister(Register::kPc), pc_val + sizeof(uint32_t));
     }
@@ -102,13 +102,13 @@ class FuckedExecutorBeqTest : public testing::Test {
 };
 
 TEST_F(FuckedExecutorBeqTest, BeqTest1) {
-  Test(100, 5, 5, Register::kX1, Register::kX2, 2);
+  Test(100, 5, 5, Register::kX1, Register::kX2, 8);
 }
 TEST_F(FuckedExecutorBeqTest, BeqTest2) {
-  Test(100, 5, 666, Register::kX20, Register::kX2, -25);
+  Test(100, 5, 666, Register::kX20, Register::kX2, -100);
 }
 TEST_F(FuckedExecutorBeqTest, BeqTest3) {
-  Test(9000, 67, 67, Register::kX22, Register::kX29, 30);
+  Test(9000, 67, 67, Register::kX22, Register::kX29, 120);
 }
 TEST_F(FuckedExecutorBeqTest, BeqTest4) {
   Test(9000, 67, 67, Register::kX22, Register::kX29, -9000);
