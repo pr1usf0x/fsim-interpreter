@@ -14,7 +14,7 @@ class Memory {
  public:
   explicit Memory(size_t mem_size) : data_(mem_size) {}
 
-  uint32_t Read(uint32_t addr) {
+  uint32_t Read(uint32_t addr) const {
     if (addr > data_.size() - 4)
       throw std::runtime_error("Segfault");
 #if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)

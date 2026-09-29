@@ -3,22 +3,15 @@
 #include <cstddef>
 #include <cstdint>
 #include <stdexcept>
-#include <utility>
-#include "cpu/cpu.hpp"
+#include <algorithm>
 #include "cpu/decoder.hpp"
 #include "encoding.hpp"
 #include "kernel.hpp"
+#include "memory.hpp"
 
 namespace toy_sim {
 
 // ================================== EXECUTION ===============================
-
-void Cpu::RunProgram() {
-  for (;;) {
-    const BasicBlock& bb = Fetch();
-    kHandlers()[static_cast<size_t>(bb.front().type_)](*this, bb.data());
-  }
-}
 
 namespace {
 inline uint32_t SignExtend(uint32_t num, size_t n) {
@@ -74,54 +67,53 @@ void CheckAlignment(size_t addr) {
 
 #define DISPATCH()                                      \
   ++instr;                                              \
-  const auto index = static_cast<size_t>(instr->type_); \
-  [[clang::musttail]] return kHandlers()[index](cpu, instr);
+  [[clang::musttail]] return GetNextHandler(instr->type_)(cpu, memory, instr);
 
 }  // namespace
 
-void ExecuteLd(Cpu& cpu, const Instruction* instr) {
+void Executor::ExecuteLd(CpuState& cpu, Memory& memory, const Instruction* instr) {
   size_t addr = cpu.GetRegister(instr->r1_) + SignExtend(instr->imm_, 14);
   CheckAlignment(addr);
-  cpu.SetRegister(instr->r2_, cpu.GetMemory().Read(addr));
+  cpu.SetRegister(instr->r2_, memory.Read(addr));
   cpu.Step();
   DISPATCH();
 }
 
-void ExecuteSt(Cpu& cpu, const Instruction* instr) {
+void Executor::ExecuteSt(CpuState& cpu, Memory& memory, const Instruction* instr) {
   size_t addr = cpu.GetRegister(instr->r1_) + SignExtend(instr->imm_, 14);
   CheckAlignment(addr);
-  cpu.GetMemory().Write(addr, cpu.GetRegister(instr->r2_));
+  memory.Write(addr, cpu.GetRegister(instr->r2_));
   cpu.Step();
   DISPATCH();
 }
 
-void ExecuteStp(Cpu& cpu, const Instruction* instr) {
+void Executor::ExecuteStp(CpuState& cpu, Memory& memory, const Instruction* instr) {
   size_t addr = cpu.GetRegister(instr->r1_) + SignExtend(instr->imm_, 11);
   CheckAlignment(addr);
-  cpu.GetMemory().Write(addr, cpu.GetRegister(instr->r2_));
-  cpu.GetMemory().Write(addr + sizeof(uint32_t), cpu.GetRegister(instr->r3_));
+  memory.Write(addr, cpu.GetRegister(instr->r2_));
+  memory.Write(addr + sizeof(uint32_t), cpu.GetRegister(instr->r3_));
   cpu.Step();
   DISPATCH();
 }
 
-void ExecuteLdPost(Cpu& cpu, const Instruction* instr) {
+void Executor::ExecuteLdPost(CpuState& cpu, Memory& memory, const Instruction* instr) {
   CheckAlignment(cpu.GetRegister(instr->r1_));
   cpu.SetRegister(instr->r2_,
-                  cpu.GetMemory().Read(cpu.GetRegister(instr->r1_)));
+                  memory.Read(cpu.GetRegister(instr->r1_)));
   cpu.SetRegister(instr->r1_,
                   cpu.GetRegister(instr->r1_) + SignExtend(instr->imm_, 14));
   cpu.Step();
   DISPATCH();
 }
 
-void ExecuteAdd(Cpu& cpu, const Instruction* instr) {
+void Executor::ExecuteAdd(CpuState& cpu, Memory& memory, const Instruction* instr) {
   cpu.SetRegister(instr->r3_,
                   cpu.GetRegister(instr->r1_) + cpu.GetRegister(instr->r2_));
   cpu.Step();
   DISPATCH();
 }
 
-void ExecuteBeq(Cpu& cpu, const Instruction* instr) {
+void Executor::ExecuteBeq(CpuState& cpu, Memory&, const Instruction* instr) {
   bool cond = cpu.GetRegister(instr->r1_) == cpu.GetRegister(instr->r2_);
   if (cond) {
     cpu.SetRegister(Register::kPc,
@@ -131,79 +123,71 @@ void ExecuteBeq(Cpu& cpu, const Instruction* instr) {
   }
 }
 
-void ExecuteLi(Cpu& cpu, const Instruction* instr) {
+void Executor::ExecuteLi(CpuState& cpu, Memory& memory, const Instruction* instr) {
   cpu.SetRegister(instr->r1_, SignExtend(instr->imm_, 16));
   cpu.Step();
   DISPATCH();
 }
 
-void ExecuteAddi(Cpu& cpu, const Instruction* instr) {
+void Executor::ExecuteAddi(CpuState& cpu, Memory& memory, const Instruction* instr) {
   cpu.SetRegister(instr->r2_,
                   cpu.GetRegister(instr->r1_) + SignExtend(instr->imm_, 16));
   cpu.Step();
   DISPATCH();
 }
 
-void ExecuteJ(Cpu& cpu, const Instruction* instr) {
+void Executor::ExecuteJ(CpuState& cpu, Memory&, const Instruction* instr) {
   cpu.SetRegister(Register::kPc, (cpu.GetRegister(Register::kPc) & 0xF0000000) |
                                      (instr->imm_ << 2));
 }
 
-void ExecuteNor(Cpu& cpu, const Instruction* instr) {
+void Executor::ExecuteNor(CpuState& cpu, Memory& memory, const Instruction* instr) {
   cpu.SetRegister(instr->r3_,
                   ~(cpu.GetRegister(instr->r1_) | cpu.GetRegister(instr->r2_)));
   cpu.Step();
   DISPATCH();
 }
 
-void ExecuteSsat(Cpu& cpu, const Instruction* instr) {
+void Executor::ExecuteSsat(CpuState& cpu, Memory& memory, const Instruction* instr) {
   cpu.SetRegister(instr->r1_,
                   SaturateSigned(cpu.GetRegister(instr->r2_), instr->imm_));
   cpu.Step();
   DISPATCH();
 }
 
-void ExecuteRbit(Cpu& cpu, const Instruction* instr) {
+void Executor::ExecuteRbit(CpuState& cpu, Memory& memory, const Instruction* instr) {
   cpu.SetRegister(instr->r1_, ReverseBit(cpu.GetRegister(instr->r2_)));
   cpu.Step();
   DISPATCH();
 }
 
-void ExecuteSyscall(Cpu& cpu, const Instruction* instr) {
+void Executor::ExecuteSyscall(CpuState& cpu, Memory&, const Instruction* instr) {
   cpu.Step();
   throw SyscallException(static_cast<Syscalls>(instr->imm_));
 }
 
-void ExecuteBext(Cpu& cpu, const Instruction* instr) {
+void Executor::ExecuteBext(CpuState& cpu, Memory& memory, const Instruction* instr) {
   cpu.SetRegister(instr->r1_, BitExtract(cpu.GetRegister(instr->r2_),
                                          cpu.GetRegister(instr->r3_)));
   cpu.Step();
   DISPATCH();
 }
 
-void ExecuteUsat(Cpu& cpu, const Instruction* instr) {
+void Executor::ExecuteUsat(CpuState& cpu, Memory& memory, const Instruction* instr) {
   cpu.SetRegister(instr->r1_,
                   SaturateUnsigned(cpu.GetRegister(instr->r2_), instr->imm_));
   cpu.Step();
   DISPATCH();
 }
 
-void ExecuteUnknown(Cpu&, const Instruction*) {
+void Executor::ExecuteUnknown(CpuState&, Memory&, const Instruction*) {
   throw std::runtime_error("Executor: Unknown Instruction");
-}
-
-// ================================ FETCH =====================================
-
-const BasicBlock& Cpu::Fetch() {
-
-
-  return bb->second;
 }
 
 //////////////////////////////// FOR TESTS ////////////////////////////////////
 
-void Execute(Cpu& cpu, Instruction instr) {
-  const Instruction pseudo_block[] = {
+void Executor::ExecuteInstr(CpuState& cpu_state, Memory& memory, Instruction instr) {
+  const BasicBlock pseudo_block = {
       instr,
       {.type_ = CommandType::kBeq,
        .r1_ = Register::kX0,
@@ -211,56 +195,7 @@ void Execute(Cpu& cpu, Instruction instr) {
        .r3_ = Register::kX0,
        .imm_ = 0},
   };
-  switch (instr.type_) {
-    case CommandType::kLd:
-      ExecuteLd(cpu, pseudo_block);
-      break;
-    case CommandType::kAdd:
-      ExecuteAdd(cpu, pseudo_block);
-      break;
-    case CommandType::kBeq:
-      ExecuteBeq(cpu, pseudo_block);
-      break;
-    case CommandType::kLi:
-      ExecuteLi(cpu, pseudo_block);
-      break;
-    case CommandType::kSt:
-      ExecuteSt(cpu, pseudo_block);
-      break;
-    case CommandType::kStp:
-      ExecuteStp(cpu, pseudo_block);
-      break;
-    case CommandType::kAddi:
-      ExecuteAddi(cpu, pseudo_block);
-      break;
-    case CommandType::kJ:
-      ExecuteJ(cpu, pseudo_block);
-      break;
-    case CommandType::kLdPost:
-      ExecuteLdPost(cpu, pseudo_block);
-      break;
-    case CommandType::kNor:
-      ExecuteNor(cpu, pseudo_block);
-      break;
-    case CommandType::kSsat:
-      ExecuteSsat(cpu, pseudo_block);
-      break;
-    case CommandType::kRbit:
-      ExecuteRbit(cpu, pseudo_block);
-      break;
-    case CommandType::kSyscall:
-      ExecuteSyscall(cpu, pseudo_block);
-      break;
-    case CommandType::kBext:
-      ExecuteBext(cpu, pseudo_block);
-      break;
-    case CommandType::kUsat:
-      ExecuteUsat(cpu, pseudo_block);
-      break;
-    case CommandType::kUnknown:
-    default:
-      ExecuteUnknown(cpu, pseudo_block);
-  }
+  return GetNextHandler(instr.type_)(cpu_state, memory, pseudo_block.data());
 }
 
 }  // namespace toy_sim

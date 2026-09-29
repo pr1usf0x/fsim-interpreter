@@ -5,24 +5,23 @@
 #include <unordered_map>
 #include <vector>
 #include "encoding.hpp"
+#include "cpu/fetcher.hpp"
+#include "memory.hpp"
 
 namespace toy_sim {
 
-class Memory;
-
 using BasicBlock = std::vector<Instruction>;
-class Cpu;
 
 class Decoder {
  public:
-  explicit Decoder(Cpu& cpu) : cpu_(cpu){}
+  explicit Decoder(Fetcher& fetcher) : fetcher_(fetcher){}
 
   static Instruction DecodeInstr(uint32_t instr);
   const BasicBlock& Decode(uint32_t pc);
 
  private:
   BasicBlock DecodeBB(uint32_t pc);
-  Cpu& cpu_;
+  Fetcher& fetcher_;
   std::unordered_map<uint32_t, BasicBlock> decoder_cache_;
 };
 

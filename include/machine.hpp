@@ -17,7 +17,7 @@ class Machine {
 
   uint32_t RunProgram(const std::string& filename) {
     kernel_.MmapFile(filename, kDefaultStart);
-    cpu_.SetRegister(Register::kPc, kDefaultStart);
+    cpu_.GetCpuState().SetRegister(Register::kPc, kDefaultStart);
     for (;;) {
       try {
         cpu_.RunProgram();
@@ -26,7 +26,7 @@ class Machine {
           case Syscalls::kReturnToExecution:
             break;
           case Syscalls::kExit:
-            return cpu_.GetRegister(Register::kX1);
+            return cpu_.GetCpuState().GetRegister(Register::kX1);
           case Syscalls::kAbort:  // ADD core dump
             return 0;
           default:

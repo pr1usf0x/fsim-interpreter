@@ -32,11 +32,11 @@ void Kernel::MmapFile(const std::string& filename, uint32_t addr) {
 Syscalls Kernel::HandleSyscall(Syscalls syscall) {
   switch (syscall) {
     case Syscalls::kPrintUnsigned:
-      PrintUnsigned(cpu_.GetRegister(Register::kX1));
+      PrintUnsigned(cpu_.GetCpuState().GetRegister(Register::kX1));
       return Syscalls::kReturnToExecution;
 
     case Syscalls::kScanUnsigned:
-      cpu_.SetRegister(Register::kX0, ScanUnsigned());
+      cpu_.GetCpuState().SetRegister(Register::kX0, ScanUnsigned());
       return Syscalls::kReturnToExecution;
 
     case Syscalls::kExit:

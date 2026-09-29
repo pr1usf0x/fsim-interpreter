@@ -12,7 +12,7 @@ using namespace toy_sim;
 int main() {
   std::ofstream out("tests/fibs.bin", std::ios::binary);
   // X9 - zero register
-  std::vector<toy_sim::uint32_t> prog = {
+  std::vector<uint32_t> prog = {
     GenSyscallInstr(static_cast<uint32_t>(Syscalls::kScanUnsigned)),
     GenAddInstr(Register::kX0, Register::kX9, Register::kX10),
     GenAddiInstr(Register::kX9, Register::kX11, 0),

@@ -1,12 +1,10 @@
 #include <gtest/gtest.h>
 #include <cstddef>
-#include "cpu/cpu.hpp"
+#include "cpu/cpu_state.hpp"
 #include "cpu/executor.hpp"
 #include "encoding.hpp"
 #include "kernel.hpp"
-#include "machine.hpp"
 #include "memory.hpp"
-#include "microasm.hpp"
 
 namespace toy_sim {
 namespace {
@@ -18,19 +16,20 @@ class FuckedExecutorLdTest : public testing::Test {
   void Test(uint32_t addr, uint32_t val, Register base, Register target,
             int32_t offset) {
     memory_.Write(addr + offset, val);
-    cpu_.SetRegister(base, addr);
-    size_t old_pc = cpu_.GetRegister(Register::kPc);
-    Execute(cpu_, {.type_ = CommandType::kLd,
-                  .r1_ = base,
-                  .r2_ = target,
-                  .r3_ = Register::kX0,
-                  .imm_ = static_cast<uint32_t>(offset)});
-    EXPECT_EQ(cpu_.GetRegister(target), val);
-    EXPECT_EQ(cpu_.GetRegister(Register::kPc), old_pc + sizeof(uint32_t));
+    cpu_state_.SetRegister(base, addr);
+    size_t old_pc = cpu_state_.GetRegister(Register::kPc);
+    Executor::ExecuteInstr(cpu_state_, memory_,
+                           {.type_ = CommandType::kLd,
+                            .r1_ = base,
+                            .r2_ = target,
+                            .r3_ = Register::kX0,
+                            .imm_ = static_cast<uint32_t>(offset)});
+    EXPECT_EQ(cpu_state_.GetRegister(target), val);
+    EXPECT_EQ(cpu_state_.GetRegister(Register::kPc), old_pc + sizeof(uint32_t));
   }
 
   Memory memory_{kMemorySize};
-  Cpu cpu_{memory_};
+  CpuState cpu_state_;
 };
 
 TEST_F(FuckedExecutorLdTest, LdTest1) {
@@ -50,20 +49,21 @@ class FuckedExecutorAddTest : public testing::Test {
  protected:
   void Test(uint32_t val1, uint32_t val2, Register rs, Register rt,
             Register rd) {
-    cpu_.SetRegister(rs, val1);
-    cpu_.SetRegister(rt, val2);
-    size_t old_pc = cpu_.GetRegister(Register::kPc);
-    Execute(cpu_, {.type_ = CommandType::kAdd,
-                  .r1_ = rs,
-                  .r2_ = rt,
-                  .r3_ = rd,
-                  .imm_ = 0});
-    EXPECT_EQ(cpu_.GetRegister(rd), val1 + val2);
-    EXPECT_EQ(cpu_.GetRegister(Register::kPc), old_pc + sizeof(uint32_t));
+    cpu_state_.SetRegister(rs, val1);
+    cpu_state_.SetRegister(rt, val2);
+    size_t old_pc = cpu_state_.GetRegister(Register::kPc);
+    Executor::ExecuteInstr(cpu_state_, memory_,
+                           {.type_ = CommandType::kAdd,
+                            .r1_ = rs,
+                            .r2_ = rt,
+                            .r3_ = rd,
+                            .imm_ = 0});
+    EXPECT_EQ(cpu_state_.GetRegister(rd), val1 + val2);
+    EXPECT_EQ(cpu_state_.GetRegister(Register::kPc), old_pc + sizeof(uint32_t));
   }
 
   Memory memory_{kMemorySize};
-  Cpu cpu_{memory_};
+  CpuState cpu_state_;
 };
 
 TEST_F(FuckedExecutorAddTest, AddTest1) {
@@ -83,23 +83,24 @@ class FuckedExecutorBeqTest : public testing::Test {
  protected:
   void Test(uint32_t pc_val, uint32_t val1, uint32_t val2, Register rs,
             Register rt, int32_t byte_offset) {
-    cpu_.SetRegister(Register::kPc, pc_val);
-    cpu_.SetRegister(rs, val1);
-    cpu_.SetRegister(rt, val2);
-    Execute(cpu_, {.type_ = CommandType::kBeq,
-                  .r1_ = rs,
-                  .r2_ = rt,
-                  .r3_ = Register::kX0,
-                  .imm_ = static_cast<uint32_t>(byte_offset)});
+    cpu_state_.SetRegister(Register::kPc, pc_val);
+    cpu_state_.SetRegister(rs, val1);
+    cpu_state_.SetRegister(rt, val2);
+    Executor::ExecuteInstr(cpu_state_, memory_,
+                           {.type_ = CommandType::kBeq,
+                            .r1_ = rs,
+                            .r2_ = rt,
+                            .r3_ = Register::kX0,
+                            .imm_ = static_cast<uint32_t>(byte_offset)});
     if (val1 == val2) {
-      EXPECT_EQ(cpu_.GetRegister(Register::kPc), pc_val + byte_offset);
+      EXPECT_EQ(cpu_state_.GetRegister(Register::kPc), pc_val + byte_offset);
     } else {
-      EXPECT_EQ(cpu_.GetRegister(Register::kPc), pc_val + sizeof(uint32_t));
+      EXPECT_EQ(cpu_state_.GetRegister(Register::kPc), pc_val + sizeof(uint32_t));
     }
   }
 
   Memory memory_{kMemorySize};
-  Cpu cpu_{memory_};
+  CpuState cpu_state_;
 };
 
 TEST_F(FuckedExecutorBeqTest, BeqTest1) {
@@ -119,20 +120,21 @@ class FuckedExecutorStTest : public testing::Test {
  protected:
   void Test(uint32_t addr, uint32_t val, Register base, Register rt,
             int32_t offset) {
-    cpu_.SetRegister(base, addr);
-    cpu_.SetRegister(rt, val);
-    size_t old_pc = cpu_.GetRegister(Register::kPc);
-    Execute(cpu_, {.type_ = CommandType::kSt,
-                  .r1_ = base,
-                  .r2_ = rt,
-                  .r3_ = Register::kX0,
-                  .imm_ = static_cast<uint32_t>(offset)});
+    cpu_state_.SetRegister(base, addr);
+    cpu_state_.SetRegister(rt, val);
+    size_t old_pc = cpu_state_.GetRegister(Register::kPc);
+    Executor::ExecuteInstr(cpu_state_, memory_,
+                           {.type_ = CommandType::kSt,
+                            .r1_ = base,
+                            .r2_ = rt,
+                            .r3_ = Register::kX0,
+                            .imm_ = static_cast<uint32_t>(offset)});
     EXPECT_EQ(memory_.Read(addr + offset), val);
-    EXPECT_EQ(cpu_.GetRegister(Register::kPc), old_pc + sizeof(uint32_t));
+    EXPECT_EQ(cpu_state_.GetRegister(Register::kPc), old_pc + sizeof(uint32_t));
   }
 
   Memory memory_{kMemorySize};
-  Cpu cpu_{memory_};
+  CpuState cpu_state_;
 };
 
 TEST_F(FuckedExecutorStTest, StTest1) {
@@ -152,22 +154,23 @@ class FuckedStpTest : public testing::Test {
  protected:
   void Test(uint32_t addr, uint32_t val1, uint32_t val2, Register base,
             Register rt1, Register rt2, int32_t offset) {
-    cpu_.SetRegister(base, addr);
-    cpu_.SetRegister(rt1, val1);
-    cpu_.SetRegister(rt2, val2);
-    size_t old_pc = cpu_.GetRegister(Register::kPc);
-    Execute(cpu_, {.type_ = CommandType::kStp,
-                  .r1_ = base,
-                  .r2_ = rt1,
-                  .r3_ = rt2,
-                  .imm_ = static_cast<uint32_t>(offset)});
+    cpu_state_.SetRegister(base, addr);
+    cpu_state_.SetRegister(rt1, val1);
+    cpu_state_.SetRegister(rt2, val2);
+    size_t old_pc = cpu_state_.GetRegister(Register::kPc);
+    Executor::ExecuteInstr(cpu_state_, memory_,
+                           {.type_ = CommandType::kStp,
+                            .r1_ = base,
+                            .r2_ = rt1,
+                            .r3_ = rt2,
+                            .imm_ = static_cast<uint32_t>(offset)});
     EXPECT_EQ(memory_.Read(addr + offset), val1);
     EXPECT_EQ(memory_.Read(addr + offset + sizeof(uint32_t)), val2);
-    EXPECT_EQ(cpu_.GetRegister(Register::kPc), old_pc + sizeof(uint32_t));
+    EXPECT_EQ(cpu_state_.GetRegister(Register::kPc), old_pc + sizeof(uint32_t));
   }
 
   Memory memory_{kMemorySize};
-  Cpu cpu_{memory_};
+  CpuState cpu_state_;
 };
 
 TEST_F(FuckedStpTest, StpTest1) {
@@ -187,19 +190,20 @@ TEST_F(FuckedStpTest, StpTest4) {
 class FuckedAddiTest : public testing::Test {
  protected:
   void Test(uint32_t val, Register rs, Register rt, uint32_t imm) {
-    cpu_.SetRegister(rs, val);
-    size_t old_pc = cpu_.GetRegister(Register::kPc);
-    Execute(cpu_, {.type_ = CommandType::kAddi,
-                  .r1_ = rs,
-                  .r2_ = rt,
-                  .r3_ = Register::kX0,
-                  .imm_ = imm});
-    EXPECT_EQ(cpu_.GetRegister(rt), val + imm);
-    EXPECT_EQ(cpu_.GetRegister(Register::kPc), old_pc + sizeof(uint32_t));
+    cpu_state_.SetRegister(rs, val);
+    size_t old_pc = cpu_state_.GetRegister(Register::kPc);
+    Executor::ExecuteInstr(cpu_state_, memory_,
+                           {.type_ = CommandType::kAddi,
+                            .r1_ = rs,
+                            .r2_ = rt,
+                            .r3_ = Register::kX0,
+                            .imm_ = imm});
+    EXPECT_EQ(cpu_state_.GetRegister(rt), val + imm);
+    EXPECT_EQ(cpu_state_.GetRegister(Register::kPc), old_pc + sizeof(uint32_t));
   }
 
   Memory memory_{kMemorySize};
-  Cpu cpu_{memory_};
+  CpuState cpu_state_;
 };
 
 TEST_F(FuckedAddiTest, AddiTest1) {
@@ -218,18 +222,19 @@ TEST_F(FuckedAddiTest, AddiTest4) {
 class FuckedJTest : public testing::Test {
  protected:
   void Test(uint32_t pc, uint32_t index) {
-    cpu_.SetRegister(Register::kPc, pc);
-    Execute(cpu_, {.type_ = CommandType::kJ,
-                  .r1_ = Register::kX0,
-                  .r2_ = Register::kX0,
-                  .r3_ = Register::kX0,
-                  .imm_ = index});
-    EXPECT_EQ(cpu_.GetRegister(Register::kPc),
+    cpu_state_.SetRegister(Register::kPc, pc);
+    Executor::ExecuteInstr(cpu_state_, memory_,
+                           {.type_ = CommandType::kJ,
+                            .r1_ = Register::kX0,
+                            .r2_ = Register::kX0,
+                            .r3_ = Register::kX0,
+                            .imm_ = index});
+    EXPECT_EQ(cpu_state_.GetRegister(Register::kPc),
               (pc & 0xF0000000) | (index << 2));
   }
 
   Memory memory_{kMemorySize};
-  Cpu cpu_{memory_};
+  CpuState cpu_state_;
 };
 
 TEST_F(FuckedJTest, JTest1) {
@@ -250,20 +255,21 @@ class FuckedExecutorLdPostTest : public testing::Test {
   void Test(uint32_t addr, uint32_t val, Register base, Register rt,
             int32_t offset) {
     memory_.Write(addr, val);
-    cpu_.SetRegister(base, addr);
-    size_t old_pc = cpu_.GetRegister(Register::kPc);
-    Execute(cpu_, {.type_ = CommandType::kLdPost,
-                  .r1_ = base,
-                  .r2_ = rt,
-                  .r3_ = Register::kX0,
-                  .imm_ = static_cast<uint32_t>(offset)});
-    EXPECT_EQ(cpu_.GetRegister(rt), val);
-    EXPECT_EQ(cpu_.GetRegister(base), (uint32_t)(addr + offset));
-    EXPECT_EQ(cpu_.GetRegister(Register::kPc), old_pc + sizeof(uint32_t));
+    cpu_state_.SetRegister(base, addr);
+    size_t old_pc = cpu_state_.GetRegister(Register::kPc);
+    Executor::ExecuteInstr(cpu_state_, memory_,
+                           {.type_ = CommandType::kLdPost,
+                            .r1_ = base,
+                            .r2_ = rt,
+                            .r3_ = Register::kX0,
+                            .imm_ = static_cast<uint32_t>(offset)});
+    EXPECT_EQ(cpu_state_.GetRegister(rt), val);
+    EXPECT_EQ(cpu_state_.GetRegister(base), (uint32_t)(addr + offset));
+    EXPECT_EQ(cpu_state_.GetRegister(Register::kPc), old_pc + sizeof(uint32_t));
   }
 
   Memory memory_{kMemorySize};
-  Cpu cpu_{memory_};
+  CpuState cpu_state_;
 };
 
 TEST_F(FuckedExecutorLdPostTest, LdPostTest1) {
@@ -283,20 +289,21 @@ class FuckedNorTest : public testing::Test {
  protected:
   void Test(uint32_t val1, uint32_t val2, Register rs, Register rt,
             Register rd) {
-    cpu_.SetRegister(rs, val1);
-    cpu_.SetRegister(rt, val2);
-    size_t old_pc = cpu_.GetRegister(Register::kPc);
-    Execute(cpu_, {.type_ = CommandType::kNor,
-                  .r1_ = rs,
-                  .r2_ = rt,
-                  .r3_ = rd,
-                  .imm_ = 0});
-    EXPECT_EQ(cpu_.GetRegister(rd), ~(val1 | val2));
-    EXPECT_EQ(cpu_.GetRegister(Register::kPc), old_pc + sizeof(uint32_t));
+    cpu_state_.SetRegister(rs, val1);
+    cpu_state_.SetRegister(rt, val2);
+    size_t old_pc = cpu_state_.GetRegister(Register::kPc);
+    Executor::ExecuteInstr(cpu_state_, memory_,
+                           {.type_ = CommandType::kNor,
+                            .r1_ = rs,
+                            .r2_ = rt,
+                            .r3_ = rd,
+                            .imm_ = 0});
+    EXPECT_EQ(cpu_state_.GetRegister(rd), ~(val1 | val2));
+    EXPECT_EQ(cpu_state_.GetRegister(Register::kPc), old_pc + sizeof(uint32_t));
   }
 
   Memory memory_{kMemorySize};
-  Cpu cpu_{memory_};
+  CpuState cpu_state_;
 };
 
 TEST_F(FuckedNorTest, NorTest1) {
@@ -320,16 +327,18 @@ TEST_F(FuckedNorTest, NorTest4) {
 class FuckedSyscallTest : public testing::Test {
  protected:
   void Test(Syscalls syscall_num) {
-    EXPECT_THROW(Execute(cpu_, {.type_ = CommandType::kSyscall,
-                               .r1_ = Register::kX0,
-                               .r2_ = Register::kX0,
-                               .r3_ = Register::kX0,
-                               .imm_ = static_cast<uint32_t>(syscall_num)});
-                 , SyscallException);
+    EXPECT_THROW(Executor::ExecuteInstr(
+                     cpu_state_, memory_,
+                     {.type_ = CommandType::kSyscall,
+                      .r1_ = Register::kX0,
+                      .r2_ = Register::kX0,
+                      .r3_ = Register::kX0,
+                      .imm_ = static_cast<uint32_t>(syscall_num)}),
+                 SyscallException);
   }
 
   Memory memory_{kMemorySize};
-  Cpu cpu_{memory_};
+  CpuState cpu_state_;
 };
 
 TEST_F(FuckedSyscallTest, SyscallTest1) {

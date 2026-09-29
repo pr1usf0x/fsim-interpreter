@@ -2,7 +2,6 @@
 #include <cassert>
 #include <cstdint>
 #include <stdexcept>
-#include "cpu/cpu.hpp"
 #include "encoding.hpp"
 #include "memory.hpp"
 
@@ -204,7 +203,7 @@ BasicBlock Decoder::DecodeBB(uint32_t pc) {
   BasicBlock bb{};
   Instruction decoded{};
   do {
-    decoded = DecodeInstr(cpu_.GetMemory().Read(pc));
+    decoded = DecodeInstr(fetcher_.Fetch(pc));
     bb.push_back(decoded);
     pc += sizeof(uint32_t);
   } while (!CheckIfTerminator(decoded));
