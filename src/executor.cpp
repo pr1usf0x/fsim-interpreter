@@ -65,118 +65,141 @@ void CheckAlignment(size_t addr) {
     throw std::runtime_error("Executor: MisalignedAccess");
 }
 
-#define DISPATCH()                                      \
-  ++instr;                                              \
-  [[clang::musttail]] return GetNextHandler(instr->type_)(cpu, memory, instr);
+#define DISPATCH()                                                           \
+  ++instr;                                                                   \
+  [[clang::musttail]] return GetNextHandler(instr->type_)(cpu_state, memory, \
+                                                          instr);
 
 }  // namespace
 
-void Executor::ExecuteLd(CpuState& cpu, Memory& memory, const Instruction* instr) {
-  size_t addr = cpu.GetRegister(instr->r1_) + SignExtend(instr->imm_, 14);
+void Executor::ExecuteLd(CpuState& cpu_state, Memory& memory,
+                         const Instruction* instr) {
+  size_t addr = cpu_state.GetRegister(instr->r1_) + SignExtend(instr->imm_, 14);
   CheckAlignment(addr);
-  cpu.SetRegister(instr->r2_, memory.Read(addr));
-  cpu.Step();
+  cpu_state.SetRegister(instr->r2_, memory.Read(addr));
+  cpu_state.Step();
   DISPATCH();
 }
 
-void Executor::ExecuteSt(CpuState& cpu, Memory& memory, const Instruction* instr) {
-  size_t addr = cpu.GetRegister(instr->r1_) + SignExtend(instr->imm_, 14);
+void Executor::ExecuteSt(CpuState& cpu_state, Memory& memory,
+                         const Instruction* instr) {
+  size_t addr = cpu_state.GetRegister(instr->r1_) + SignExtend(instr->imm_, 14);
   CheckAlignment(addr);
-  memory.Write(addr, cpu.GetRegister(instr->r2_));
-  cpu.Step();
+  memory.Write(addr, cpu_state.GetRegister(instr->r2_));
+  cpu_state.Step();
   DISPATCH();
 }
 
-void Executor::ExecuteStp(CpuState& cpu, Memory& memory, const Instruction* instr) {
-  size_t addr = cpu.GetRegister(instr->r1_) + SignExtend(instr->imm_, 11);
+void Executor::ExecuteStp(CpuState& cpu_state, Memory& memory,
+                          const Instruction* instr) {
+  size_t addr = cpu_state.GetRegister(instr->r1_) + SignExtend(instr->imm_, 11);
   CheckAlignment(addr);
-  memory.Write(addr, cpu.GetRegister(instr->r2_));
-  memory.Write(addr + sizeof(uint32_t), cpu.GetRegister(instr->r3_));
-  cpu.Step();
+  memory.Write(addr, cpu_state.GetRegister(instr->r2_));
+  memory.Write(addr + sizeof(uint32_t), cpu_state.GetRegister(instr->r3_));
+  cpu_state.Step();
   DISPATCH();
 }
 
-void Executor::ExecuteLdPost(CpuState& cpu, Memory& memory, const Instruction* instr) {
-  CheckAlignment(cpu.GetRegister(instr->r1_));
-  cpu.SetRegister(instr->r2_,
-                  memory.Read(cpu.GetRegister(instr->r1_)));
-  cpu.SetRegister(instr->r1_,
-                  cpu.GetRegister(instr->r1_) + SignExtend(instr->imm_, 14));
-  cpu.Step();
+void Executor::ExecuteLdPost(CpuState& cpu_state, Memory& memory,
+                             const Instruction* instr) {
+  CheckAlignment(cpu_state.GetRegister(instr->r1_));
+  cpu_state.SetRegister(instr->r2_,
+                        memory.Read(cpu_state.GetRegister(instr->r1_)));
+  cpu_state.SetRegister(instr->r1_, cpu_state.GetRegister(instr->r1_) +
+                                        SignExtend(instr->imm_, 14));
+  cpu_state.Step();
   DISPATCH();
 }
 
-void Executor::ExecuteAdd(CpuState& cpu, Memory& memory, const Instruction* instr) {
-  cpu.SetRegister(instr->r3_,
-                  cpu.GetRegister(instr->r1_) + cpu.GetRegister(instr->r2_));
-  cpu.Step();
+void Executor::ExecuteAdd(CpuState& cpu_state, Memory& memory,
+                          const Instruction* instr) {
+  cpu_state.SetRegister(instr->r3_, cpu_state.GetRegister(instr->r1_) +
+                                        cpu_state.GetRegister(instr->r2_));
+  cpu_state.Step();
   DISPATCH();
 }
 
-void Executor::ExecuteBeq(CpuState& cpu, Memory&, const Instruction* instr) {
-  bool cond = cpu.GetRegister(instr->r1_) == cpu.GetRegister(instr->r2_);
+void Executor::ExecuteBeq(CpuState& cpu_state, Memory&,
+                          const Instruction* instr) {
+  bool cond =
+      cpu_state.GetRegister(instr->r1_) == cpu_state.GetRegister(instr->r2_);
   if (cond) {
-    cpu.SetRegister(Register::kPc,
-                    cpu.GetRegister(Register::kPc) + instr->imm_);
+    cpu_state.SetRegister(Register::kPc,
+                          cpu_state.GetRegister(Register::kPc) + instr->imm_);
   } else {
-    cpu.Step();
+    cpu_state.Step();
   }
 }
 
-void Executor::ExecuteLi(CpuState& cpu, Memory& memory, const Instruction* instr) {
-  cpu.SetRegister(instr->r1_, SignExtend(instr->imm_, 16));
-  cpu.Step();
+void Executor::ExecuteLi(CpuState& cpu_state, Memory& memory,
+                         const Instruction* instr) {
+  cpu_state.SetRegister(instr->r1_, SignExtend(instr->imm_, 16));
+  cpu_state.Step();
   DISPATCH();
 }
 
-void Executor::ExecuteAddi(CpuState& cpu, Memory& memory, const Instruction* instr) {
-  cpu.SetRegister(instr->r2_,
-                  cpu.GetRegister(instr->r1_) + SignExtend(instr->imm_, 16));
-  cpu.Step();
+void Executor::ExecuteAddi(CpuState& cpu_state, Memory& memory,
+                           const Instruction* instr) {
+  cpu_state.SetRegister(instr->r2_, cpu_state.GetRegister(instr->r1_) +
+                                        SignExtend(instr->imm_, 16));
+  cpu_state.Step();
   DISPATCH();
 }
 
-void Executor::ExecuteJ(CpuState& cpu, Memory&, const Instruction* instr) {
-  cpu.SetRegister(Register::kPc, (cpu.GetRegister(Register::kPc) & 0xF0000000) |
-                                     (instr->imm_ << 2));
+void Executor::ExecuteJ(CpuState& cpu_state, Memory&,
+                        const Instruction* instr) {
+  cpu_state.SetRegister(
+      Register::kPc,
+      (cpu_state.GetRegister(Register::kPc) & 0xF0000000) | (instr->imm_ << 2));
 }
 
-void Executor::ExecuteNor(CpuState& cpu, Memory& memory, const Instruction* instr) {
-  cpu.SetRegister(instr->r3_,
-                  ~(cpu.GetRegister(instr->r1_) | cpu.GetRegister(instr->r2_)));
-  cpu.Step();
+void Executor::ExecuteNor(CpuState& cpu_state, Memory& memory,
+                          const Instruction* instr) {
+  cpu_state.SetRegister(instr->r3_, ~(cpu_state.GetRegister(instr->r1_) |
+                                      cpu_state.GetRegister(instr->r2_)));
+  cpu_state.Step();
   DISPATCH();
 }
 
-void Executor::ExecuteSsat(CpuState& cpu, Memory& memory, const Instruction* instr) {
-  cpu.SetRegister(instr->r1_,
-                  SaturateSigned(cpu.GetRegister(instr->r2_), instr->imm_));
-  cpu.Step();
+void Executor::ExecuteSsat(CpuState& cpu_state, Memory& memory,
+                           const Instruction* instr) {
+  cpu_state.SetRegister(
+      instr->r1_,
+      SaturateSigned(cpu_state.GetRegister(instr->r2_), instr->imm_));
+  cpu_state.Step();
   DISPATCH();
 }
 
-void Executor::ExecuteRbit(CpuState& cpu, Memory& memory, const Instruction* instr) {
-  cpu.SetRegister(instr->r1_, ReverseBit(cpu.GetRegister(instr->r2_)));
-  cpu.Step();
+void Executor::ExecuteRbit(CpuState& cpu_state, Memory& memory,
+                           const Instruction* instr) {
+  cpu_state.SetRegister(instr->r1_,
+                        ReverseBit(cpu_state.GetRegister(instr->r2_)));
+  cpu_state.Step();
   DISPATCH();
 }
 
-void Executor::ExecuteSyscall(CpuState& cpu, Memory&, const Instruction* instr) {
-  cpu.Step();
-  throw SyscallException(static_cast<Syscalls>(instr->imm_));
+void Executor::ExecuteSyscall(CpuState& cpu_state, Memory&,
+                              [[maybe_unused]] const Instruction* instr) {
+  auto syscall = static_cast<Syscalls>(cpu_state.GetRegister(Register::kX0));
+  cpu_state.Step();
+  throw SyscallException(syscall);
 }
 
-void Executor::ExecuteBext(CpuState& cpu, Memory& memory, const Instruction* instr) {
-  cpu.SetRegister(instr->r1_, BitExtract(cpu.GetRegister(instr->r2_),
-                                         cpu.GetRegister(instr->r3_)));
-  cpu.Step();
+void Executor::ExecuteBext(CpuState& cpu_state, Memory& memory,
+                           const Instruction* instr) {
+  cpu_state.SetRegister(instr->r1_,
+                        BitExtract(cpu_state.GetRegister(instr->r2_),
+                                   cpu_state.GetRegister(instr->r3_)));
+  cpu_state.Step();
   DISPATCH();
 }
 
-void Executor::ExecuteUsat(CpuState& cpu, Memory& memory, const Instruction* instr) {
-  cpu.SetRegister(instr->r1_,
-                  SaturateUnsigned(cpu.GetRegister(instr->r2_), instr->imm_));
-  cpu.Step();
+void Executor::ExecuteUsat(CpuState& cpu_state, Memory& memory,
+                           const Instruction* instr) {
+  cpu_state.SetRegister(
+      instr->r1_,
+      SaturateUnsigned(cpu_state.GetRegister(instr->r2_), instr->imm_));
+  cpu_state.Step();
   DISPATCH();
 }
 

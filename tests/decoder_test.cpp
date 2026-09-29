@@ -510,38 +510,8 @@ TEST_F(FuckedDecoderTest, SyscallTest1) {
                      .r1_ = Register::kX0,
                      .r2_ = Register::kX0,
                      .r3_ = Register::kX0,
-                     .imm_ = 666};
-  Instruction out = Decoder::DecodeInstr(GenSyscallInstr(ref.imm_));
-  Test(out, ref);
-};
-
-TEST_F(FuckedDecoderTest, SyscallTest2) {
-  Instruction ref = {.type_ = CommandType::kSyscall,
-                     .r1_ = Register::kX0,
-                     .r2_ = Register::kX0,
-                     .r3_ = Register::kX0,
-                     .imm_ = 1488};
-  Instruction out = Decoder::DecodeInstr(GenSyscallInstr(ref.imm_));
-  Test(out, ref);
-};
-
-TEST_F(FuckedDecoderTest, SyscallTest3) {
-  Instruction ref = {.type_ = CommandType::kSyscall,
-                     .r1_ = Register::kX0,
-                     .r2_ = Register::kX0,
-                     .r3_ = Register::kX0,
-                     .imm_ = 0x80000};
-  Instruction out = Decoder::DecodeInstr(GenSyscallInstr(ref.imm_));
-  Test(out, ref);
-};
-
-TEST_F(FuckedDecoderTest, SyscallTest4) {
-  Instruction ref = {.type_ = CommandType::kSyscall,
-                     .r1_ = Register::kX0,
-                     .r2_ = Register::kX0,
-                     .r3_ = Register::kX0,
                      .imm_ = 0};
-  Instruction out = Decoder::DecodeInstr(GenSyscallInstr(ref.imm_));
+  Instruction out = Decoder::DecodeInstr(GenSyscallInstr());
   Test(out, ref);
 };
 

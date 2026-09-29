@@ -97,8 +97,8 @@ constexpr uint32_t GenRbitInstr(Register rd, Register rs) {
   return GenOpCode(kRbit) | GenReg1(rd) | GenReg2(rs) | GenBits(0b111110, 0, 5);
 }
 
-constexpr uint32_t GenSyscallInstr(uint32_t code) {
-  return GenOpCode(kSyscall) | GenBits(code, 6, 25) | GenBits(0b010000, 0, 5);
+constexpr uint32_t GenSyscallInstr() {
+  return GenOpCode(kSyscall) | GenBits(0b010000, 0, 5);
 }
 
 constexpr uint32_t GenBextInstr(Register rd, Register rs1, Register rs2) {
