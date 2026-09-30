@@ -6,7 +6,6 @@
 #include <vector>
 #include "encoding.hpp"
 #include "cpu/fetcher.hpp"
-#include "memory.hpp"
 
 namespace toy_sim {
 

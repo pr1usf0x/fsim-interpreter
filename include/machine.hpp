@@ -29,8 +29,9 @@ class Machine {
             return cpu_.GetCpuState().GetRegister(Register::kX1);
           case Syscalls::kAbort:  // ADD core dump
             return 0;
+          case Syscalls::kUnknownSyscall:
           default:
-            assert(0);
+            return 0; // tmp
         }
       }
     }

@@ -2,7 +2,6 @@
 #define KERNEL_HPP_
 
 #include "cpu/cpu.hpp"
-#include "encoding.hpp"
 #include "memory.hpp"
 
 namespace toy_sim {

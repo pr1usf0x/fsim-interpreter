@@ -24,13 +24,18 @@ FetchContent_Declare(
 # For Windows: Prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 
-FetchContent_MakeAvailable(googletest)
+FetchContent_Declare(
+  cli11
+  URL https://github.com/CLIUtils/CLI11/archive/refs/tags/v2.7.2.zip
+)
+
+FetchContent_MakeAvailable(googletest cli11)
 
 # ===== intreptretator =====
 
 add_executable(${TARGET})
 target_include_directories(${TARGET} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_link_libraries(${TARGET} PRIVATE GTest::gtest)
+target_link_libraries(${TARGET} PRIVATE CLI11::CLI11)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src)
 

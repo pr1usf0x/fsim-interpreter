@@ -104,7 +104,7 @@ TEST_F(FuckedDecoderTest, BeqTest1) {
                      .r3_ = Register::kX0,
                      .imm_ = 666};
   Instruction out = Decoder::DecodeInstr(GenBeqInstr(ref.r1_, ref.r2_, ref.imm_));
-  ref.imm_ <<= 2;  // Decoded branch offsets are in bytes.
+  ref.imm_ = SignExtend(ref.imm_, 16) << 2;
   Test(out, ref);
 };
 
@@ -115,7 +115,7 @@ TEST_F(FuckedDecoderTest, BeqTest2) {
                      .r3_ = Register::kX0,
                      .imm_ = 0xFFFF};
   Instruction out = Decoder::DecodeInstr(GenBeqInstr(ref.r1_, ref.r2_, ref.imm_));
-  ref.imm_ <<= 2;
+  ref.imm_ = SignExtend(ref.imm_, 16) << 2;
   Test(out, ref);
 };
 
@@ -126,7 +126,7 @@ TEST_F(FuckedDecoderTest, BeqTest3) {
                      .r3_ = Register::kX0,
                      .imm_ = 6767};
   Instruction out = Decoder::DecodeInstr(GenBeqInstr(ref.r1_, ref.r2_, ref.imm_));
-  ref.imm_ <<= 2;
+  ref.imm_ = SignExtend(ref.imm_, 16) << 2;
   Test(out, ref);
 };
 
@@ -137,7 +137,7 @@ TEST_F(FuckedDecoderTest, BeqTest4) {
                      .r3_ = Register::kX0,
                      .imm_ = 0};
   Instruction out = Decoder::DecodeInstr(GenBeqInstr(ref.r1_, ref.r2_, ref.imm_));
-  ref.imm_ <<= 2;
+  ref.imm_ = SignExtend(ref.imm_, 16) << 2;
   Test(out, ref);
 };
 

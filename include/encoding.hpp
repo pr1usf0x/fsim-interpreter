@@ -4,6 +4,7 @@
 #include <array>
 #include <cstdint>
 #include <cstdlib>
+#include <cassert>
 
 namespace toy_sim {
 
@@ -153,6 +154,14 @@ struct Instruction {
   Register r3_;
   uint32_t imm_;
 };
+
+inline uint32_t SignExtend(uint32_t num, size_t n) {
+  assert(n < 32);
+  if (n == 0) return 0;
+  n = 32 - n;
+  return (static_cast<int32_t>(num << n) >> n);
+}
+
 }  // namespace toy_sim
 
 #endif  // ENCODING_HPP_

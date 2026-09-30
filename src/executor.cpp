@@ -14,13 +14,6 @@ namespace toy_sim {
 // ================================== EXECUTION ===============================
 
 namespace {
-inline uint32_t SignExtend(uint32_t num, size_t n) {
-  assert(n < 32);
-  if (n == 0) return 0;
-  n = 32 - n;
-  return (static_cast<int32_t>(num << n) >> n);
-}
-
 inline uint32_t SaturateSigned(uint32_t num, size_t n) {
   assert(n <= 31);
   if (n == 0)
@@ -125,7 +118,7 @@ void Executor::ExecuteBeq(CpuState& cpu_state, Memory&,
       cpu_state.GetRegister(instr->r1_) == cpu_state.GetRegister(instr->r2_);
   if (cond) {
     cpu_state.SetRegister(Register::kPc,
-                          cpu_state.GetRegister(Register::kPc) + instr->imm_);
+                          cpu_state.GetRegister(Register::kPc) + static_cast<int32_t>(instr->imm_));
   } else {
     cpu_state.Step();
   }

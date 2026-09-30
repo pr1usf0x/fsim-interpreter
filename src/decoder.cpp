@@ -145,7 +145,7 @@ Instruction Decoder::DecodeInstr(uint32_t instr_code) {
     case CommandType::kBeq:
       instr.r1_ = DecodeReg1(instr_code);
       instr.r2_ = DecodeReg2(instr_code);
-      instr.imm_ = GetBits(instr_code, 0, 15) << 2;
+      instr.imm_ = SignExtend(GetBits(instr_code, 0, 15), 16) << 2;
       break;
 
     case CommandType::kAddi:
