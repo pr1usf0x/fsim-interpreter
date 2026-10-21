@@ -1,20 +1,29 @@
+#include <CLI/CLI.hpp>
 #include <exception>
 #include <iostream>
+#include "llvm/IR/LLVMContext.h"
 #include "machine.hpp"
-#include <CLI/CLI.hpp>
+#include "jit/llvm_compiler.hpp"
+
 
 int main(int argc, char** argv) {
+  llvm::LLVMContext ctx;
+  toy_sim::ToyISAModule compiler(0, ctx);
+
+  #ifdef sixseven
   CLI::App app{"Toy simulator for toy ISA."};
   argv = app.ensure_utf8(argv);
-  std::string config_filename{};
-  app.add_option("-f,--file,file", config_filename, "Config")->required();
+  std::string file_input{};
+  app.add_option("-f,--file,file", file_input, "file_input")->required();
   CLI11_PARSE(app, argc, argv);
 
   try {
-    toy_sim::Machine machine(1 << 16);
-    machine.RunProgram(config_filename);
+    const size_t k_mem_size = 1 << 19;
+    toy_sim::Machine machine(k_mem_size);
+    machine.RunProgram(file_input);
   } catch (const std::exception& e) {
     std::cerr << e.what();
   }
+  #endif
   return 0;
 }

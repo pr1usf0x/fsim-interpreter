@@ -1,0 +1,3 @@
+[submodule "ruby-toy-asm"]
+	path = ruby-toy-asm
+	url = git@github.com:pr1usf0x/ruby-toy-asm.git

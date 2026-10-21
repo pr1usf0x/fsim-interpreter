@@ -326,7 +326,7 @@ TEST_F(FuckedNorTest, NorTest4) {
 
 class FuckedSyscallTest : public testing::Test {
  protected:
-  void Test(Syscalls syscall_num) {
+  void Test(SyscallNum syscall_num) {
     EXPECT_THROW(Executor::ExecuteInstr(
                      cpu_state_, memory_,
                      {.type_ = CommandType::kSyscall,
@@ -342,7 +342,7 @@ class FuckedSyscallTest : public testing::Test {
 };
 
 TEST_F(FuckedSyscallTest, SyscallTest1) {
-  Test(Syscalls::kExit);
+  Test(SyscallNum::kExit);
 }
 
 }  // namespace toy_sim

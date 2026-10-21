@@ -1,12 +1,10 @@
 #ifndef MEMORY_HPP_
 #define MEMORY_HPP_
 
-#include <algorithm>
 #include <cstdint>
 #include <cstring>
 #include <stdexcept>
 #include <vector>
-#include "encoding.hpp"
 
 namespace toy_sim {
 
@@ -49,6 +47,8 @@ class Memory {
       throw std::runtime_error("Segfault");
     return data_.data() + addr;
   }
+
+  std::byte* GetMemPtr() { return data_.data(); }
 
  private:
   std::vector<std::byte> data_;

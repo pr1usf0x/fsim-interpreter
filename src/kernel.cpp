@@ -1,8 +1,10 @@
 #include "kernel.hpp"
-#include <fstream>
-#include <ios>
+#include <cstdint>
+#include <cstring>
+#include <elfio/elfio.hpp>
 #include <iostream>
 #include <stdexcept>
+#include <string_view>
 #include "encoding.hpp"
 #include "memory.hpp"
 
@@ -20,32 +22,41 @@ uint32_t ScanUnsigned() {
 }
 }  // namespace
 
-void Kernel::MmapFile(const std::string& filename, uint32_t addr) {
-    std::ifstream in(filename, std::ios::binary);
-    if (!in) {
-        throw std::runtime_error{"Kernel : file open error"};
-    }
-    const size_t tmp_max_size = 1024;
-    in.read(reinterpret_cast<char*>(memory_.GetDataPtr(addr)), tmp_max_size);
+uint32_t Kernel::MmapFile(std::string_view filename) {
+  ELFIO::elfio reader;
+  if (!reader.load(std::string{filename})) {
+    throw std::invalid_argument{"No such file."};
+  }
+  if (reader.get_class() != ELFIO::ELFCLASS32 || // machine type
+      reader.get_encoding() != ELFIO::ELFDATA2LSB ||
+      reader.segments.size() != 1) { // 1 segment ???
+    throw std::invalid_argument{"Incorrect ELF format"};
+  }
+
+  auto* segment = reader.segments[0];
+  memcpy(memory_.GetDataPtr(segment->get_virtual_address()),
+         segment->get_data(), segment->get_file_size());
+
+  return reader.get_entry();
 }
 
-Syscalls Kernel::HandleSyscall(Syscalls syscall) {
+SyscallNum Kernel::HandleSyscall(SyscallNum syscall) {
   switch (syscall) {
-    case Syscalls::kPrintUnsigned:
+    case SyscallNum::kPrintUnsigned:
       PrintUnsigned(cpu_.GetCpuState().GetRegister(Register::kX1));
-      return Syscalls::kReturnToExecution;
+      return SyscallNum::kReturnToExecution;
 
-    case Syscalls::kScanUnsigned:
+    case SyscallNum::kScanUnsigned:
       cpu_.GetCpuState().SetRegister(Register::kX0, ScanUnsigned());
-      return Syscalls::kReturnToExecution;
+      return SyscallNum::kReturnToExecution;
 
-    case Syscalls::kExit:
-      return Syscalls::kExit;
-    case Syscalls::kAbort:
-      return Syscalls::kAbort;
-    case Syscalls::kUnknownSyscall:
+    case SyscallNum::kExit:
+      return SyscallNum::kExit;
+    case SyscallNum::kAbort:
+      return SyscallNum::kAbort;
+    case SyscallNum::kUnknownSyscall:
     default:
-      return Syscalls::kUnknownSyscall;
+      return SyscallNum::kUnknownSyscall;
   }
 }
 

@@ -1,41 +1,51 @@
 cmake_minimum_required(VERSION 3.11)
 
 project(toy_vm)
-set(TARGET toy_vm)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL
     "Generate compile_commands.json" FORCE)
+option(THREADED_CODE "Enable threaded code" ON)
 
-if(MSVC)
-    set(CMAKE_CXX_FLAGS "-O2 -Wall")
-else()
-    set(CMAKE_CXX_FLAGS "-O2 -Wall -Wextra -std=c++20")
-endif()
+include(FetchContent)
+function(fetch_if_not_available PKG DOWNLOAD_URL)
+    find_package(${PKG} QUIET)
+    if(NOT ${PKG}_FOUND)
+        include(FetchContent)
+        FetchContent_Declare(${PKG}_fetchcontent
+            URL ${DOWNLOAD_URL}
+        )
+        FetchContent_MakeAvailable(${PKG}_fetchcontent)
+  endif()
+endfunction()
+
+set(CMAKE_CXX_FLAGS "-DLLVM_DISABLE_ABI_BREAKING_CHECKS_ENFORCING -O2 -Wall -Wextra -std=c++20")
 
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # ===== deps =====
 
-include(FetchContent)
-FetchContent_Declare(
+fetch_if_not_available(
   googletest
-  URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
+  https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
 )
-# For Windows: Prevent overriding the parent project's compiler/linker settings
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 
-FetchContent_Declare(
+fetch_if_not_available(
   cli11
-  URL https://github.com/CLIUtils/CLI11/archive/refs/tags/v2.7.2.zip
+  https://github.com/CLIUtils/CLI11/archive/refs/tags/v2.7.2.zip
 )
 
-FetchContent_MakeAvailable(googletest cli11)
+fetch_if_not_available(
+  elfio
+  https://github.com/serge1/ELFIO/archive/refs/tags/Release_3.12.zip
+)
 
+find_package(LLVM REQUIRED CONFIG)
+include_directories(${LLVM_INCLUDE_DIRS})
+separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
+add_definitions(${LLVM_DEFINITIONS_LIST})
+llvm_map_components_to_libnames(llvm_libs support core irreader)
 # ===== intreptretator =====
-
-add_executable(${TARGET})
-target_include_directories(${TARGET} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_link_libraries(${TARGET} PRIVATE CLI11::CLI11)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src)
 

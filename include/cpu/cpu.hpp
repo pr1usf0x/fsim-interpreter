@@ -1,12 +1,11 @@
 #ifndef CPU_HPP_
 #define CPU_HPP_
 
-#include "cpu/cpu_state.hpp"
-#include "cpu/decoder.hpp"
-#include "cpu/executor.hpp"
-#include "cpu/fetcher.hpp"
-#include "encoding.hpp"
+#include "cpu_state.hpp"
+#include "decoder.hpp"
+#include "executor.hpp"
 #include "fetcher.hpp"
+#include "encoding.hpp"
 #include "memory.hpp"
 
 namespace toy_sim {
@@ -19,9 +18,9 @@ class Cpu {
         executor_(memory, cpu_state_),
         memory_(memory) {}
 
-  void RunProgram() {
+  void Execute() {
     for (;;) {
-      const BasicBlock& bb =
+      const DecodedBlock& bb =
           decoder_.Decode(cpu_state_.GetRegister(Register::kPc));
       executor_.ExecuteBB(bb);
     }

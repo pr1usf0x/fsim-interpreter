@@ -1,7 +1,10 @@
 #include "cpu/decoder.hpp"
 #include <cassert>
 #include <cstdint>
+#include <iostream>
 #include <stdexcept>
+#include "cpu/cpu.hpp"
+#include "cpu/cpu_state.hpp"
 #include "encoding.hpp"
 #include "memory.hpp"
 
@@ -15,7 +18,7 @@ inline uint32_t GetBits(uint32_t bits, size_t low_b, size_t up_b) {
   assert(low_b <= up_b);
 
   size_t n = up_b - low_b + 1;
-  uint32_t mask = ~0U >> (8 * sizeof(bits) - n);
+  uint32_t mask = ~0U >> ((8 * sizeof(bits)) - n);
   return (bits >> low_b) & mask;
 }
 
@@ -199,8 +202,8 @@ Instruction Decoder::DecodeInstr(uint32_t instr_code) {
   return instr;
 }
 
-BasicBlock Decoder::DecodeBB(uint32_t pc) {
-  BasicBlock bb{};
+DecodedBlock Decoder::DecodeBB(uint32_t pc) {
+  DecodedBlock bb{};
   Instruction decoded{};
   do {
     decoded = DecodeInstr(fetcher_.Fetch(pc));
@@ -210,7 +213,7 @@ BasicBlock Decoder::DecodeBB(uint32_t pc) {
   return bb;
 }
 
-const BasicBlock& Decoder::Decode(uint32_t pc) {
+const DecodedBlock& Decoder::Decode(uint32_t pc) {
   auto bb = decoder_cache_.find(pc);
   if (bb == decoder_cache_.end()) {
     auto decoded_bb = DecodeBB(pc);

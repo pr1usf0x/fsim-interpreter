@@ -5,6 +5,7 @@
 #include "cpu/decoder.hpp"
 #include "encoding.hpp"
 #include "memory.hpp"
+#include <iostream>
 
 namespace toy_sim {
 
@@ -12,8 +13,14 @@ class Executor {
  public:
   explicit Executor(Memory& memory, CpuState& cpu_state)
       : memory_(memory), cpu_state_(cpu_state) {}
-  void ExecuteBB(const BasicBlock& bb) {
+  void ExecuteBB(const DecodedBlock& bb) {
+    #ifdef THREADED_CODE // template ?? 
     return GetNextHandler(bb.front().type_)(cpu_state_, memory_, bb.data());
+    #else
+      for (const auto& instr : bb) {
+        GetNextHandler(instr.type_)(cpu_state_, memory_, &instr);
+      }
+    #endif
   }
   void static ExecuteInstr(CpuState& cpu_state, Memory& memory, Instruction instr);
   using handler = void (*)(CpuState&, Memory&, const Instruction*);

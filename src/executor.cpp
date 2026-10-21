@@ -27,7 +27,7 @@ inline uint32_t SaturateSigned(uint32_t num, size_t n) {
 
 inline uint32_t SaturateUnsigned(uint32_t num, size_t n) {
   assert(n <= 32);
-  uint32_t max_n_uint = ~0U >> (sizeof(uint32_t) * 8 - n);
+  uint32_t max_n_uint = ~0U >> ((sizeof(uint32_t) * 8) - n);
   return std::min<uint32_t>(max_n_uint, num);
 }
 
@@ -58,10 +58,14 @@ void CheckAlignment(size_t addr) {
     throw std::runtime_error("Executor: MisalignedAccess");
 }
 
+#ifdef THREADED_CODE
 #define DISPATCH()                                                           \
   ++instr;                                                                   \
   [[clang::musttail]] return GetNextHandler(instr->type_)(cpu_state, memory, \
-                                                          instr);
+                                                          instr)
+#else
+#define DISPATCH() (void) 0
+#endif
 
 }  // namespace
 
@@ -83,7 +87,7 @@ void Executor::ExecuteSt(CpuState& cpu_state, Memory& memory,
   DISPATCH();
 }
 
-void Executor::ExecuteStp(CpuState& cpu_state, Memory& memory,
+void Executor::ExecuteStp(CpuState& cpu_state, [[maybe_unused]] Memory& memory,
                           const Instruction* instr) {
   size_t addr = cpu_state.GetRegister(instr->r1_) + SignExtend(instr->imm_, 11);
   CheckAlignment(addr);
@@ -93,7 +97,7 @@ void Executor::ExecuteStp(CpuState& cpu_state, Memory& memory,
   DISPATCH();
 }
 
-void Executor::ExecuteLdPost(CpuState& cpu_state, Memory& memory,
+void Executor::ExecuteLdPost(CpuState& cpu_state, [[maybe_unused]] Memory& memory,
                              const Instruction* instr) {
   CheckAlignment(cpu_state.GetRegister(instr->r1_));
   cpu_state.SetRegister(instr->r2_,
@@ -104,7 +108,7 @@ void Executor::ExecuteLdPost(CpuState& cpu_state, Memory& memory,
   DISPATCH();
 }
 
-void Executor::ExecuteAdd(CpuState& cpu_state, Memory& memory,
+void Executor::ExecuteAdd(CpuState& cpu_state, [[maybe_unused]] Memory& memory,
                           const Instruction* instr) {
   cpu_state.SetRegister(instr->r3_, cpu_state.GetRegister(instr->r1_) +
                                         cpu_state.GetRegister(instr->r2_));
@@ -112,7 +116,7 @@ void Executor::ExecuteAdd(CpuState& cpu_state, Memory& memory,
   DISPATCH();
 }
 
-void Executor::ExecuteBeq(CpuState& cpu_state, Memory&,
+void Executor::ExecuteBeq(CpuState& cpu_state, [[maybe_unused]] Memory&,
                           const Instruction* instr) {
   bool cond =
       cpu_state.GetRegister(instr->r1_) == cpu_state.GetRegister(instr->r2_);
@@ -124,14 +128,14 @@ void Executor::ExecuteBeq(CpuState& cpu_state, Memory&,
   }
 }
 
-void Executor::ExecuteLi(CpuState& cpu_state, Memory& memory,
+void Executor::ExecuteLi(CpuState& cpu_state, [[maybe_unused]] Memory& memory,
                          const Instruction* instr) {
   cpu_state.SetRegister(instr->r1_, SignExtend(instr->imm_, 16));
   cpu_state.Step();
   DISPATCH();
 }
 
-void Executor::ExecuteAddi(CpuState& cpu_state, Memory& memory,
+void Executor::ExecuteAddi(CpuState& cpu_state, [[maybe_unused]] Memory& memory,
                            const Instruction* instr) {
   cpu_state.SetRegister(instr->r2_, cpu_state.GetRegister(instr->r1_) +
                                         SignExtend(instr->imm_, 16));
@@ -139,14 +143,14 @@ void Executor::ExecuteAddi(CpuState& cpu_state, Memory& memory,
   DISPATCH();
 }
 
-void Executor::ExecuteJ(CpuState& cpu_state, Memory&,
+void Executor::ExecuteJ(CpuState& cpu_state, [[maybe_unused]] Memory&,
                         const Instruction* instr) {
   cpu_state.SetRegister(
       Register::kPc,
       (cpu_state.GetRegister(Register::kPc) & 0xF0000000) | (instr->imm_ << 2));
 }
 
-void Executor::ExecuteNor(CpuState& cpu_state, Memory& memory,
+void Executor::ExecuteNor(CpuState& cpu_state, [[maybe_unused]] Memory& memory,
                           const Instruction* instr) {
   cpu_state.SetRegister(instr->r3_, ~(cpu_state.GetRegister(instr->r1_) |
                                       cpu_state.GetRegister(instr->r2_)));
@@ -154,7 +158,7 @@ void Executor::ExecuteNor(CpuState& cpu_state, Memory& memory,
   DISPATCH();
 }
 
-void Executor::ExecuteSsat(CpuState& cpu_state, Memory& memory,
+void Executor::ExecuteSsat(CpuState& cpu_state, [[maybe_unused]] Memory& memory,
                            const Instruction* instr) {
   cpu_state.SetRegister(
       instr->r1_,
@@ -163,7 +167,7 @@ void Executor::ExecuteSsat(CpuState& cpu_state, Memory& memory,
   DISPATCH();
 }
 
-void Executor::ExecuteRbit(CpuState& cpu_state, Memory& memory,
+void Executor::ExecuteRbit(CpuState& cpu_state, [[maybe_unused]] Memory& memory,
                            const Instruction* instr) {
   cpu_state.SetRegister(instr->r1_,
                         ReverseBit(cpu_state.GetRegister(instr->r2_)));
@@ -171,14 +175,14 @@ void Executor::ExecuteRbit(CpuState& cpu_state, Memory& memory,
   DISPATCH();
 }
 
-void Executor::ExecuteSyscall(CpuState& cpu_state, Memory&,
+void Executor::ExecuteSyscall(CpuState& cpu_state, [[maybe_unused]] Memory&,
                               [[maybe_unused]] const Instruction* instr) {
-  auto syscall = static_cast<Syscalls>(cpu_state.GetRegister(Register::kX0));
+  auto syscall = static_cast<SyscallNum>(cpu_state.GetRegister(Register::kX8));
   cpu_state.Step();
   throw SyscallException(syscall);
 }
 
-void Executor::ExecuteBext(CpuState& cpu_state, Memory& memory,
+void Executor::ExecuteBext(CpuState& cpu_state, [[maybe_unused]] Memory& memory,
                            const Instruction* instr) {
   cpu_state.SetRegister(instr->r1_,
                         BitExtract(cpu_state.GetRegister(instr->r2_),
@@ -187,7 +191,7 @@ void Executor::ExecuteBext(CpuState& cpu_state, Memory& memory,
   DISPATCH();
 }
 
-void Executor::ExecuteUsat(CpuState& cpu_state, Memory& memory,
+void Executor::ExecuteUsat(CpuState& cpu_state, [[maybe_unused]] Memory& memory,
                            const Instruction* instr) {
   cpu_state.SetRegister(
       instr->r1_,
@@ -203,13 +207,13 @@ void Executor::ExecuteUnknown(CpuState&, Memory&, const Instruction*) {
 //////////////////////////////// FOR TESTS ////////////////////////////////////
 
 void Executor::ExecuteInstr(CpuState& cpu_state, Memory& memory, Instruction instr) {
-  const BasicBlock pseudo_block = {
+  const DecodedBlock pseudo_block = {
       instr,
       {.type_ = CommandType::kBeq,
        .r1_ = Register::kX0,
        .r2_ = Register::kX0,
        .r3_ = Register::kX0,
-       .imm_ = 0},
+       .imm_ = 0,},
   };
   return GetNextHandler(instr.type_)(cpu_state, memory, pseudo_block.data());
 }

@@ -9,19 +9,19 @@
 
 namespace toy_sim {
 
-using BasicBlock = std::vector<Instruction>;
+using DecodedBlock = std::vector<Instruction>;
 
 class Decoder {
  public:
   explicit Decoder(Fetcher& fetcher) : fetcher_(fetcher){}
 
   static Instruction DecodeInstr(uint32_t instr);
-  const BasicBlock& Decode(uint32_t pc);
+  const DecodedBlock& Decode(uint32_t pc);
 
  private:
-  BasicBlock DecodeBB(uint32_t pc);
+  DecodedBlock DecodeBB(uint32_t pc);
   Fetcher& fetcher_;
-  std::unordered_map<uint32_t, BasicBlock> decoder_cache_;
+  std::unordered_map<uint32_t, DecodedBlock> decoder_cache_;
 };
 
 }  // namespace toy_sim
