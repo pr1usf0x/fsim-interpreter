@@ -7,10 +7,6 @@
 
 
 int main(int argc, char** argv) {
-  llvm::LLVMContext ctx;
-  toy_sim::ToyISAModule compiler(0, ctx);
-
-  #ifdef sixseven
   CLI::App app{"Toy simulator for toy ISA."};
   argv = app.ensure_utf8(argv);
   std::string file_input{};
@@ -24,6 +20,5 @@ int main(int argc, char** argv) {
   } catch (const std::exception& e) {
     std::cerr << e.what();
   }
-  #endif
   return 0;
 }

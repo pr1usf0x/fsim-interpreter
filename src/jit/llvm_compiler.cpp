@@ -1,5 +1,6 @@
 #include "jit/llvm_compiler.hpp"
 
+#include <cassert>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -7,6 +8,7 @@
 #include "cpu/decoder.hpp"
 #include "encoding.hpp"
 
+#include "llvm/ADT/APInt.h"
 #include "llvm/ExecutionEngine/Orc/CompileUtils.h"
 #include "llvm/ExecutionEngine/Orc/ExecutionUtils.h"
 #include "llvm/ExecutionEngine/Orc/IRCompileLayer.h"
@@ -21,41 +23,16 @@
 
 namespace toy_sim {
 
-ToyISAModule::ToyISAModule(uint32_t pc, llvm::LLVMContext& ctx,
-                           const DecodedBlock& decoded_bb)
-    : ctx_(ctx),
-      module_(std::make_unique<llvm::Module>("ToyIsa JIT" + kGetBlockName(pc),
-                                             ctx_)),
-      builder_(ctx_) {
+void ToySimBBBuilder::EmitLd(const Instruction& instr, llvm::Value* mem,
+                             llvm::Value* regs, llvm::Value* pc) {
+  assert(mem);
+  assert(regs);
+  assert(pc);
 
-  auto* ft = llvm::FunctionType::get(
-      llvm::Type::getInt32Ty(ctx_),
-      {llvm::PointerType::get(ctx_, 0), llvm::PointerType::get(ctx_, 0)},
-      false);
-  fn_ = llvm::Function::Create(ft, llvm::Function::ExternalLinkage,
-                               kGetBlockName(pc), module_.get());
+  uint32_t imm_signed = SignExtend(instr.imm_, 14);
 
-  bb_ = llvm::BasicBlock::Create(ctx, "entry", fn_);
-
-  builder_.SetInsertPoint(bb_);
-  auto* ptr_to_reg = GetRegisterPtr(Register::kX0);
-  auto* reg_val = builder_.CreateLoad(builder_.getInt32Ty(), ptr_to_reg);
-  builder_.CreateRet(reg_val);
-
-  Decode
-  fn_->print(llvm::errs());
 }
 
-// helpers
-llvm::Value* ToyISAModule::GetRegisterPtr(Register reg) {
-  return builder_.CreateGEP(builder_.getInt32Ty(), fn_->getArg(kRegArg),
-                            {builder_.getInt32(static_cast<int>(reg))});
-}
 
-llvm::Value* ToyISAModule::GetMemPtr(uint32_t mem_addr) {
-  return builder_.CreateGEP(builder_.getInt8Ty(), fn_->getArg(kMemArg),
-                            {builder_.getInt32(mem_addr)});
-}
 
-// void LLVMCompileBlock::emitLD(const Instruction)
 }  // namespace toy_sim

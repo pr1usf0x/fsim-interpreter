@@ -1,9 +1,10 @@
 #include "cpu/executor.hpp"
+#include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <stdexcept>
-#include <algorithm>
+#include "common.hpp"
 #include "cpu/decoder.hpp"
 #include "encoding.hpp"
 #include "kernel.hpp"
@@ -14,23 +15,6 @@ namespace toy_sim {
 // ================================== EXECUTION ===============================
 
 namespace {
-inline uint32_t SaturateSigned(uint32_t num, size_t n) {
-  assert(n <= 31);
-  if (n == 0)
-    return 0;
-  int32_t min_n_int = -(1U << (n - 1));
-  int32_t max_n_int = (1U << (n - 1)) - 1;
-  return static_cast<int32_t>(num) > 0
-             ? std::min<int32_t>(max_n_int, static_cast<int32_t>(num))
-             : std::max<int32_t>(min_n_int, static_cast<int32_t>(num));
-}
-
-inline uint32_t SaturateUnsigned(uint32_t num, size_t n) {
-  assert(n <= 32);
-  uint32_t max_n_uint = ~0U >> ((sizeof(uint32_t) * 8) - n);
-  return std::min<uint32_t>(max_n_uint, num);
-}
-
 inline uint32_t ReverseBit(uint32_t num) {
   num = ((num & 0x55555555) << 1) | ((num & 0xAAAAAAAA) >> 1);
   num = ((num & 0x33333333) << 2) | ((num & 0xCCCCCCCC) >> 2);
@@ -64,7 +48,7 @@ void CheckAlignment(size_t addr) {
   [[clang::musttail]] return GetNextHandler(instr->type_)(cpu_state, memory, \
                                                           instr)
 #else
-#define DISPATCH() (void) 0
+#define DISPATCH() (void)0
 #endif
 
 }  // namespace
@@ -97,7 +81,8 @@ void Executor::ExecuteStp(CpuState& cpu_state, [[maybe_unused]] Memory& memory,
   DISPATCH();
 }
 
-void Executor::ExecuteLdPost(CpuState& cpu_state, [[maybe_unused]] Memory& memory,
+void Executor::ExecuteLdPost(CpuState& cpu_state,
+                             [[maybe_unused]] Memory& memory,
                              const Instruction* instr) {
   CheckAlignment(cpu_state.GetRegister(instr->r1_));
   cpu_state.SetRegister(instr->r2_,
@@ -121,8 +106,8 @@ void Executor::ExecuteBeq(CpuState& cpu_state, [[maybe_unused]] Memory&,
   bool cond =
       cpu_state.GetRegister(instr->r1_) == cpu_state.GetRegister(instr->r2_);
   if (cond) {
-    cpu_state.SetRegister(Register::kPc,
-                          cpu_state.GetRegister(Register::kPc) + static_cast<int32_t>(instr->imm_));
+    cpu_state.SetRegister(Register::kPc, cpu_state.GetRegister(Register::kPc) +
+                                             static_cast<int32_t>(instr->imm_));
   } else {
     cpu_state.Step();
   }
@@ -206,14 +191,17 @@ void Executor::ExecuteUnknown(CpuState&, Memory&, const Instruction*) {
 
 //////////////////////////////// FOR TESTS ////////////////////////////////////
 
-void Executor::ExecuteInstr(CpuState& cpu_state, Memory& memory, Instruction instr) {
+void Executor::ExecuteInstr(CpuState& cpu_state, Memory& memory,
+                            Instruction instr) {
   const DecodedBlock pseudo_block = {
       instr,
-      {.type_ = CommandType::kBeq,
-       .r1_ = Register::kX0,
-       .r2_ = Register::kX0,
-       .r3_ = Register::kX0,
-       .imm_ = 0,},
+      {
+          .type_ = CommandType::kBeq,
+          .r1_ = Register::kX0,
+          .r2_ = Register::kX0,
+          .r3_ = Register::kX0,
+          .imm_ = 0,
+      },
   };
   return GetNextHandler(instr.type_)(cpu_state, memory, pseudo_block.data());
 }
