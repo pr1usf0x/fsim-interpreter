@@ -1,28 +1,9 @@
-#include "jit/llvm_compiler.hpp"
+#include "llvm/builder_wrapper.hpp"
 
 #include <cassert>
 #include <cstdint>
-#include <memory>
-#include <set>
-#include <string>
-#include <utility>
-#include "cpu/decoder.hpp"
-#include "encoding.hpp"
-
-#include "llvm/ADT/APInt.h"
-#include "llvm/ExecutionEngine/Orc/CompileUtils.h"
-#include "llvm/ExecutionEngine/Orc/ExecutionUtils.h"
-#include "llvm/ExecutionEngine/Orc/IRCompileLayer.h"
-#include "llvm/IR/BasicBlock.h"
-#include "llvm/IR/DerivedTypes.h"
-#include "llvm/IR/Function.h"
-#include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Intrinsics.h"
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/Module.h"
-#include "llvm/IR/Type.h"
-#include "llvm/IR/Verifier.h"
-#include "llvm/Support/Alignment.h"
+#include "llvm/IR/Value.h"
 
 #define assert_ctx(CTX____) \
   do {                      \
@@ -95,7 +76,7 @@ void ToySimBBBuilder::EmitAdd(const Instruction& instr, const BuilderCtx& ctx) {
   llvm::Value* r1 = ReadRegister(instr.r1_, ctx);
   llvm::Value* r2 = ReadRegister(instr.r2_, ctx);
   llvm::Value* r2_new = b_.CreateAdd(r1, r2, "r2new");
-  SetRegister(instr.r2_, r2_new, ctx);
+  SetRegister(instr.r3_, r2_new, ctx);
   Step(ctx);
 }
 
@@ -121,7 +102,7 @@ void ToySimBBBuilder::EmitBeq(const Instruction& instr,
 }
 
 void ToySimBBBuilder::EmitLi(const Instruction& instr, const BuilderCtx& ctx) {
-  assert(instr.type_ == CommandType::kBeq);
+  assert(instr.type_ == CommandType::kLi);
   assert_ctx(ctx);
 
   SetRegister(instr.r1_, b_.getInt32(SignExtend(instr.imm_, 16)), ctx);
@@ -142,11 +123,15 @@ void ToySimBBBuilder::EmitAddi(const Instruction& instr,
 
 void ToySimBBBuilder::EmitJ(const Instruction& instr, llvm::BasicBlock* bb,
                             const BuilderCtx& ctx) {
-  assert(instr.type_ == CommandType::kBeq);
+  assert(instr.type_ == CommandType::kJ);
   assert(bb);
   assert_ctx(ctx);
 
-  b_.CreateStore(b_.getInt32(instr.imm_), ctx.pc);
+  llvm::Value* pc = b_.CreateLoad(b_.getInt32Ty(), ctx.pc);
+  llvm::Value* target = b_.CreateOr(
+      b_.CreateAnd(pc, b_.getInt32(0xF0000000)),
+      b_.getInt32(instr.imm_ << 2));
+  b_.CreateStore(target, ctx.pc);
   b_.CreateBr(bb);
 }
 
@@ -162,7 +147,8 @@ void ToySimBBBuilder::EmitNor(const Instruction& instr, const BuilderCtx& ctx) {
   Step(ctx);
 }
 
-void ToySimBBBuilder::EmitSsat(const Instruction& instr, const BuilderCtx& ctx) {
+void ToySimBBBuilder::EmitSsat(const Instruction& instr,
+                               const BuilderCtx& ctx) {
   assert(instr.type_ == CommandType::kSsat);
   assert(instr.imm_ <= 31);
   assert_ctx(ctx);
@@ -177,17 +163,17 @@ void ToySimBBBuilder::EmitSsat(const Instruction& instr, const BuilderCtx& ctx) 
   uint32_t min_value = -(1U << (instr.imm_ - 1));
   llvm::Value* r2 = ReadRegister(instr.r2_, ctx);
   llvm::Value* positive = b_.CreateICmpSGT(r2, b_.getInt32(0));
-  llvm::Value* min = b_.CreateBinaryIntrinsic(
-      llvm::Intrinsic::smax, r2, b_.getInt32(min_value));
-  llvm::Value* max = b_.CreateBinaryIntrinsic(
-      llvm::Intrinsic::umin, r2, b_.getInt32(max_value));
-  llvm::Value* saturated =
-      b_.CreateSelect(positive, max, min, "ssat");
+  llvm::Value* min = b_.CreateBinaryIntrinsic(llvm::Intrinsic::smax, r2,
+                                              b_.getInt32(min_value));
+  llvm::Value* max = b_.CreateBinaryIntrinsic(llvm::Intrinsic::umin, r2,
+                                              b_.getInt32(max_value));
+  llvm::Value* saturated = b_.CreateSelect(positive, max, min, "ssat");
   SetRegister(instr.r1_, saturated, ctx);
   Step(ctx);
 }
 
-void ToySimBBBuilder::EmitRbit(const Instruction& instr, const BuilderCtx& ctx) {
+void ToySimBBBuilder::EmitRbit(const Instruction& instr,
+                               const BuilderCtx& ctx) {
   assert(instr.type_ == CommandType::kRbit);
   assert_ctx(ctx);
 
@@ -198,15 +184,28 @@ void ToySimBBBuilder::EmitRbit(const Instruction& instr, const BuilderCtx& ctx) 
   Step(ctx);
 }
 
-void ToySimBBBuilder::EmitUsat(const Instruction& instr, const BuilderCtx& ctx) {
+void ToySimBBBuilder::EmitBext(const Instruction& instr, const BuilderCtx& ctx) {
+  assert(instr.type_ == CommandType::kBext);
+  assert_ctx(ctx);
+
+  llvm::Value* r2 = ReadRegister(instr.r2_, ctx);
+  llvm::Value* r3 = ReadRegister(instr.r3_, ctx);
+  llvm::Value* extracted = b_.CreateBinaryIntrinsic(llvm::Intrinsic::pext, r2, r3);
+  SetRegister(instr.r1_, extracted, ctx);
+
+  Step(ctx);
+}
+
+void ToySimBBBuilder::EmitUsat(const Instruction& instr,
+                               const BuilderCtx& ctx) {
   assert(instr.type_ == CommandType::kUsat);
   assert(instr.imm_ <= 32);
   assert_ctx(ctx);
 
   uint32_t max_value = instr.imm_ == 32 ? ~0U : (1U << instr.imm_) - 1;
   llvm::Value* r2 = ReadRegister(instr.r2_, ctx);
-  llvm::Value* saturated = b_.CreateBinaryIntrinsic(
-      llvm::Intrinsic::umin, r2, b_.getInt32(max_value));
+  llvm::Value* saturated = b_.CreateBinaryIntrinsic(llvm::Intrinsic::umin, r2,
+                                                    b_.getInt32(max_value));
   SetRegister(instr.r1_, saturated, ctx);
   Step(ctx);
 }
@@ -273,6 +272,12 @@ void ToySimBBBuilder::Step(const BuilderCtx& ctx) {
   llvm::Value* pc = b_.CreateLoad(b_.getInt32Ty(), ctx.pc, "pcbefore");
   llvm::Value* new_pc = b_.CreateAdd(pc, b_.getInt32(4), "pcafter");
   b_.CreateStore(new_pc, ctx.pc);
+}
+
+void ToySimBBBuilder::SetPc(uint32_t new_pc, const BuilderCtx& ctx) {
+  assert_ctx(ctx);
+
+  b_.CreateStore(b_.getInt32(new_pc), ctx.pc);
 }
 }  // namespace toy_sim
 

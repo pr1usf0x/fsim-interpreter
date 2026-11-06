@@ -115,12 +115,6 @@ CommandType GetCommandType(uint32_t word) {
   return CheckIfCommand(word, command_type) ? command_type
                                             : CommandType::kUnknown;
 }
-
-bool CheckIfTerminator(Instruction decoded) {
-  return decoded.type_ == CommandType::kJ ||
-         decoded.type_ == CommandType::kBeq ||
-         decoded.type_ == CommandType::kSyscall;
-}
 }  // namespace
 
 // ================================ DECODER ===================================
@@ -207,9 +201,10 @@ DecodedBlock Decoder::DecodeBB(uint32_t pc) {
   Instruction decoded{};
   do {
     decoded = DecodeInstr(fetcher_.Fetch(pc));
-    bb.push_back(decoded);
+    bb.instructions.push_back(decoded);
     pc += sizeof(uint32_t);
-  } while (!CheckIfTerminator(decoded));
+  } while (!IsTerminator(decoded));
+  bb.pc = pc;
   return bb;
 }
 

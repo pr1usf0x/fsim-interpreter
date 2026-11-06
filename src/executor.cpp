@@ -192,18 +192,23 @@ void Executor::ExecuteUnknown(CpuState&, Memory&, const Instruction*) {
 //////////////////////////////// FOR TESTS ////////////////////////////////////
 
 void Executor::ExecuteInstr(CpuState& cpu_state, Memory& memory,
-                            Instruction instr) {
+                            const Instruction& instr) {
   const DecodedBlock pseudo_block = {
-      instr,
-      {
-          .type_ = CommandType::kBeq,
-          .r1_ = Register::kX0,
-          .r2_ = Register::kX0,
-          .r3_ = Register::kX0,
-          .imm_ = 0,
-      },
+      .pc = 0,
+      .instructions =
+          {
+              instr,
+              {
+                  .type_ = CommandType::kBeq,
+                  .r1_ = Register::kX0,
+                  .r2_ = Register::kX0,
+                  .r3_ = Register::kX0,
+                  .imm_ = 0,
+              },
+          },
   };
-  return GetNextHandler(instr.type_)(cpu_state, memory, pseudo_block.data());
+  return GetNextHandler(instr.type_)(cpu_state, memory,
+                                     pseudo_block.instructions.data());
 }
 
 }  // namespace toy_sim

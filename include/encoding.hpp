@@ -162,6 +162,11 @@ inline uint32_t SignExtend(uint32_t num, size_t n) {
   return (static_cast<int32_t>(num << n) >> n);
 }
 
+inline bool IsTerminator(const Instruction& decoded) {
+  return decoded.type_ == CommandType::kJ ||
+         decoded.type_ == CommandType::kBeq ||
+         decoded.type_ == CommandType::kSyscall;
+}
 }  // namespace toy_sim
 
 #endif  // ENCODING_HPP_

@@ -3,7 +3,7 @@
 #include <iostream>
 #include "llvm/IR/LLVMContext.h"
 #include "machine.hpp"
-#include "jit/llvm_compiler.hpp"
+#include "llvm/builder_wrapper.hpp"
 
 
 int main(int argc, char** argv) {

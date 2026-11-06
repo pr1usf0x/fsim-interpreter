@@ -3,6 +3,7 @@
 
 #include <cctype>
 #include <cstdint>
+#include "decoder.hpp"
 #include "memory.hpp"
 
 namespace toy_sim {

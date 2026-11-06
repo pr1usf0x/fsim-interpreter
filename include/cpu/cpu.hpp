@@ -21,7 +21,7 @@ class Cpu {
   void Execute() {
     for (;;) {
       const DecodedBlock& bb =
-          decoder_.Decode(cpu_state_.GetRegister(Register::kPc));
+          decoder_.Decode(cpu_state_.GetRegister(Register::kPc)); // свитчик хочется как будто здесь, будет класс типа scheduler
       executor_.ExecuteBB(bb);
     }
   }

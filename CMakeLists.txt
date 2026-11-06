@@ -18,9 +18,9 @@ function(fetch_if_not_available PKG DOWNLOAD_URL)
   endif()
 endfunction()
 
-set(CMAKE_CXX_FLAGS "-DLLVM_DISABLE_ABI_BREAKING_CHECKS_ENFORCING -O2 -Wall -Wextra -std=c++20")
+set(CMAKE_CXX_FLAGS "-DLLVM_DISABLE_ABI_BREAKING_CHECKS_ENFORCING -O2 -Wall -Wextra -std=c++23")
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # ===== deps =====

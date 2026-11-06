@@ -3,7 +3,9 @@ set(TARGET_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/decoder.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/executor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/kernel.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/jit/llvm_compiler.cpp)
+    ${CMAKE_CURRENT_SOURCE_DIR}/llvm/builder_wrapper.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/llvm/module_compiler.cpp)
+    # ${CMAKE_CURRENT_SOURCE_DIR}/llvm/jit.cpp)
 
 set(TARGET toy_vm)
 add_executable(${TARGET})
