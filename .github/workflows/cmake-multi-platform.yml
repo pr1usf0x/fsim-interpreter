@@ -46,7 +46,6 @@ jobs:
 
     - name: Download deps
       run: |
-        bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
         wget https://apt.llvm.org/llvm.sh
         sudo chmod +x llvm.sh
         sudo ./llvm.sh 23
