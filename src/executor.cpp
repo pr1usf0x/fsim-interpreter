@@ -162,8 +162,8 @@ void Executor::ExecuteRbit(CpuState& cpu_state, [[maybe_unused]] Memory& memory,
 
 void Executor::ExecuteSyscall(CpuState& cpu_state, [[maybe_unused]] Memory&,
                               [[maybe_unused]] const Instruction* instr) {
-  auto syscall = static_cast<SyscallNum>(cpu_state.GetRegister(Register::kX8));
   cpu_state.Step();
+  auto syscall = static_cast<SyscallNum>(cpu_state.GetRegister(Register::kX8));
   throw SyscallException(syscall);
 }
 

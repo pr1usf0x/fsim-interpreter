@@ -28,11 +28,10 @@
 #include "llvm/IR/Module.h"
 #include "llvm/Support/Error.h"
 #include "llvm/Support/TargetSelect.h"
+#include "llvm/Support/raw_ostream.h"
 #include "llvm/module_compiler.hpp"
 
 namespace toy_sim {
-
-using block_func = uint32_t (*)(uint32_t*, uint32_t*, uint32_t*);
 
 class LLVMCompiler {
  private:
@@ -85,12 +84,13 @@ class LLVMCompiler {
     auto rt = main_jd_->getDefaultResourceTracker();
     auto module = module_compiler_->CreateBlockFunction(decoded_block);
     module.getModuleUnlocked()->setDataLayout(*dl_);
+    module.getModuleUnlocked()->print(llvm::outs(), nullptr);
     if (compile_layer_->add(rt, std::move(module))) {
       throw std::runtime_error("JIT : failed to compile");
     }
     return (es_->lookup({main_jd_}, (*mangle_)(kGetNameByPc(decoded_block.pc))))
         ->getAddress()
-        .toPtr<uint32_t (*)(uint32_t*, uint32_t*, uint32_t*)>();
+        .toPtr<uint32_t (*)(std::byte*, uint32_t*, uint32_t*)>();
     ;
   }
 

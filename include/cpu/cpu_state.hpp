@@ -20,10 +20,13 @@ class CpuState {
   uint32_t GetRegister(Register reg) const {
     return reg != Register::kPc ? registers_[static_cast<size_t>(reg)] : pc_;
   }
+  uint32_t* GetRegisterPtr() { return registers_.data(); }
+  uint32_t* GetPcPtr() { return &pc_; }
+
  private:
   std::vector<uint32_t> registers_;
   uint32_t pc_{};
 };
-} // namespace toy_sim
+}  // namespace toy_sim
 
 #endif  // CPU_STATE_HPP_

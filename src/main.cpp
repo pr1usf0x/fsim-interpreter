@@ -5,14 +5,12 @@
 #include "machine.hpp"
 #include "llvm/builder_wrapper.hpp"
 
-
 int main(int argc, char** argv) {
   CLI::App app{"Toy simulator for toy ISA."};
   argv = app.ensure_utf8(argv);
   std::string file_input{};
   app.add_option("-f,--file,file", file_input, "file_input")->required();
   CLI11_PARSE(app, argc, argv);
-
   try {
     const size_t k_mem_size = 1 << 19;
     toy_sim::Machine machine(k_mem_size);
@@ -22,3 +20,8 @@ int main(int argc, char** argv) {
   }
   return 0;
 }
+
+
+// 2) advanced
+// check(arg = ReadArg(), arr[push].flags)
+// codePush(arg)

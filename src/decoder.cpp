@@ -198,17 +198,17 @@ Instruction Decoder::DecodeInstr(uint32_t instr_code) {
 
 DecodedBlock Decoder::DecodeBB(uint32_t pc) {
   DecodedBlock bb{};
+  bb.pc = pc;
   Instruction decoded{};
   do {
     decoded = DecodeInstr(fetcher_.Fetch(pc));
     bb.instructions.push_back(decoded);
     pc += sizeof(uint32_t);
   } while (!IsTerminator(decoded));
-  bb.pc = pc;
   return bb;
 }
 
-const DecodedBlock& Decoder::Decode(uint32_t pc) {
+DecodedBlock& Decoder::Decode(uint32_t pc) {
   auto bb = decoder_cache_.find(pc);
   if (bb == decoder_cache_.end()) {
     auto decoded_bb = DecodeBB(pc);
