@@ -1,7 +1,6 @@
 #ifndef CPU_EXECUTOR_HPP_
 #define CPU_EXECUTOR_HPP_
 
-#include <iostream>
 #include "cpu/cpu_state.hpp"
 #include "cpu/decoder.hpp"
 #include "encoding.hpp"
