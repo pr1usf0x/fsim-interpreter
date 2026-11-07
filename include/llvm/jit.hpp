@@ -84,7 +84,7 @@ class LLVMCompiler {
     auto rt = main_jd_->getDefaultResourceTracker();
     auto module = module_compiler_->CreateBlockFunction(decoded_block);
     module.getModuleUnlocked()->setDataLayout(*dl_);
-    module.getModuleUnlocked()->print(llvm::outs(), nullptr);
+    // module.getModuleUnlocked()->print(llvm::outs(), nullptr);
     if (compile_layer_->add(rt, std::move(module))) {
       throw std::runtime_error("JIT : failed to compile");
     }

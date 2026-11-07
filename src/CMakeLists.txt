@@ -11,6 +11,8 @@ add_executable(${TARGET})
 target_include_directories(${TARGET} PRIVATE ${PROJECT_SOURCE_DIR}/include)
 target_sources(${TARGET} PRIVATE ${TARGET_SOURCES})
 target_link_libraries(${TARGET} PRIVATE CLI11::CLI11 elfio::elfio ${llvm_libs})
+target_include_directories(${TARGET} PRIVATE ${LLVM_INCLUDE_DIRS})
+target_compile_definitions(${TARGET} PRIVATE ${LLVM_DEFINITIONS_LIST})
 
 if (${THREADED_CODE})
     target_compile_definitions(${TARGET} PRIVATE -DTHREADED_CODE)
