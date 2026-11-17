@@ -34,7 +34,37 @@
 namespace toy_sim {
 
 class LLVMCompiler {
+ public:
+  using CompiledFunction = uint32_t (*)(std::byte*, uint32_t*, uint32_t*);
+
  private:
+  class BlockFunc {
+   private:
+    CompiledFunction block_ = nullptr;
+    llvm::orc::ResourceTrackerSP resource_tracker_ = nullptr;
+
+   public:
+    BlockFunc() = default;
+    BlockFunc(CompiledFunction block,
+              llvm::orc::ResourceTrackerSP resource_tracker)
+        : block_(block), resource_tracker_(std::move(resource_tracker)) {}
+
+    CompiledFunction GetBlock() const { return block_; }
+    const llvm::orc::ResourceTrackerSP& GetResourceTracker() const {
+      return resource_tracker_;
+    }
+
+    BlockFunc(const BlockFunc&) = delete;
+    BlockFunc& operator=(const BlockFunc&) = delete;
+    BlockFunc(const BlockFunc&&) = delete;
+    BlockFunc& operator=(const BlockFunc&&) = delete;
+    ~BlockFunc() {
+      if (resource_tracker_) {
+        llvm::cantFail(resource_tracker_->remove());
+      }
+    };
+  };
+
   std::unique_ptr<llvm::orc::ExecutionSession> es_;
   std::unique_ptr<llvm::DataLayout> dl_;
   std::unique_ptr<llvm::orc::MangleAndInterner> mangle_;
@@ -42,9 +72,11 @@ class LLVMCompiler {
   std::unique_ptr<llvm::orc::IRCompileLayer> compile_layer_;
   llvm::orc::JITDylib* main_jd_;
   std::unique_ptr<LLVMModuleCompiler> module_compiler_;
+  std::unordered_map<uint32_t, BlockFunc> compiled_blocks_;
 
  public:
-  explicit LLVMCompiler(DecoderCache& decoder_cache) {
+  explicit LLVMCompiler(DecoderCache& decoder_cache,
+                        const TransitionTable& transitions) {
     if (llvm::InitializeNativeTarget() ||
         llvm::InitializeNativeTargetAsmPrinter()) {
       throw std::runtime_error("JIT: failed to initialize native target");
@@ -77,21 +109,29 @@ class LLVMCompiler {
         cantFail(llvm::orc::DynamicLibrarySearchGenerator::GetForCurrentProcess(
             dl_->getGlobalPrefix())));
 
-    module_compiler_ = std::make_unique<LLVMModuleCompiler>(decoder_cache);
+    module_compiler_ =
+        std::make_unique<LLVMModuleCompiler>(decoder_cache, transitions);
   }
 
-  block_func Compile(const DecodedBlock& decoded_block) {
-    auto rt = main_jd_->getDefaultResourceTracker();
-    auto module = module_compiler_->CreateBlockFunction(decoded_block);
+  CompiledFunction GetCompiled(uint32_t pc) {
+    auto it = compiled_blocks_.find(pc);
+    if (it != compiled_blocks_.end()) {
+      return it->second.GetBlock();
+    }
+
+    auto rt = main_jd_->createResourceTracker();
+    auto module = module_compiler_->CreateBlockFunction(pc);
     module.getModuleUnlocked()->setDataLayout(*dl_);
-    // module.getModuleUnlocked()->print(llvm::outs(), nullptr);
     if (compile_layer_->add(rt, std::move(module))) {
       throw std::runtime_error("JIT : failed to compile");
     }
-    return (es_->lookup({main_jd_}, (*mangle_)(kGetNameByPc(decoded_block.pc))))
-        ->getAddress()
-        .toPtr<uint32_t (*)(std::byte*, uint32_t*, uint32_t*)>();
-    ;
+    auto symbol = es_->lookup({main_jd_}, (*mangle_)(kGetNameByPc(pc)));
+    if (!symbol) {
+      throw std::runtime_error(llvm::toString(symbol.takeError()));
+    }
+    auto block = symbol->getAddress().toPtr<CompiledFunction>();
+    return compiled_blocks_.try_emplace(pc, block, std::move(rt))
+        .first->second.GetBlock();
   }
 
   ~LLVMCompiler() {

@@ -10,17 +10,20 @@ namespace toy_sim {
 
 class Executor {
  public:
+
   explicit Executor(Memory& memory, CpuState& cpu_state)
       : memory_(memory), cpu_state_(cpu_state) {}
+
   void ExecuteBB(const DecodedBlock& bb) {
 #ifdef THREADED_CODE
-    return GetNextHandler(bb.instructions.front().type_)(
-        cpu_state_, memory_, bb.instructions.data());
+    GetNextHandler(bb.instructions.front().type_)(cpu_state_, memory_,
+                                                  bb.instructions.data());
 #else
     for (const auto& instr : bb.instructions) {
       GetNextHandler(instr.type_)(cpu_state_, memory_, &instr);
     }
 #endif
+
   }
   void static ExecuteInstr(CpuState& cpu_state, Memory& memory,
                            const Instruction& instr);

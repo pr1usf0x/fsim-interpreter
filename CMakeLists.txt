@@ -5,6 +5,7 @@ project(toy_vm)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL
     "Generate compile_commands.json" FORCE)
 option(THREADED_CODE "Enable threaded code" ON)
+option(NO_JIT "Disable JIT" OFF)
 
 include(FetchContent)
 function(fetch_if_not_available PKG DOWNLOAD_URL)

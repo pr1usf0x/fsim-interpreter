@@ -4,8 +4,12 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
+#include <utility>
+#include <vector>
 #include "cpu/decoder.hpp"
+#include "cpu/transitions.hpp"
 #include "encoding.hpp"
 #include "llvm/ExecutionEngine/Orc/ThreadSafeModule.h"
 #include "llvm/IR/Module.h"
@@ -25,36 +29,53 @@ namespace toy_sim {
 class LLVMModuleCompiler {
  private:
   DecoderCache& decoder_cache_;
-
-  struct CompileCtx {
+  const TransitionTable& transitions_;
+  struct FunctionCtx {
     llvm::LLVMContext& llvm_ctx;
-    llvm::BasicBlock* bb;
-    ToySimBBBuilder& builder;
-    size_t bb_pc;
-    ToySimBBBuilder::BuilderCtx& builder_ctx;
     llvm::Function* function;
+    ToySimBBBuilder::ArgumentCtx builder_ctx;
+    std::vector<std::pair<uint32_t, llvm::BasicBlock*>> blocks;
   };
 
-  void CompileJ(const Instruction& instr, CompileCtx* ctx);
+  struct BlockCtx {
+    FunctionCtx& function_ctx;
+    llvm::BasicBlock* bb;
+    size_t bb_pc;
+  };
 
-  void CompileBeq(const Instruction& instr, CompileCtx* ctx);
+  std::optional<uint32_t> GetTransitionPc(uint32_t pc, bool taken) const;
+  llvm::BasicBlock* GetTransitionBlock(BlockCtx* ctx, bool taken,
+                                       uint32_t return_code);
 
-  static void CompileSyscall(const Instruction& instr, CompileCtx* ctx);
+  void CompileJWrapper(const Instruction& instr, BlockCtx* ctx,
+                       ToySimBBBuilder& builder);
 
-  static void CompileInstruction(const Instruction& instr, CompileCtx* ctx);
+  void CompileBeqWrapper(const Instruction& instr, BlockCtx* ctx,
+                         ToySimBBBuilder& builder);
 
-  void CompileTerminator(const Instruction& instr, CompileCtx* ctx);
+  static void CompileSyscallWrapper(const Instruction& instr, BlockCtx* ctx,
+                                    ToySimBBBuilder& builder);
+
+  static void CompileInstruction(const Instruction& instr, BlockCtx* ctx,
+                                 ToySimBBBuilder& builder);
+
+  void CompileTerminator(const Instruction& instr, BlockCtx* ctx,
+                         ToySimBBBuilder& builder);
+
+  llvm::BasicBlock* CompileBlock(FunctionCtx* ctx, uint32_t pc);
 
   static constexpr size_t kMemArg = 0;
   static constexpr size_t kRegArg = 1;
   static constexpr size_t kPcArg = 2;
 
  public:
-  explicit LLVMModuleCompiler(DecoderCache& decoder_cache)
-      : decoder_cache_(decoder_cache) {}
+  explicit LLVMModuleCompiler(DecoderCache& decoder_cache,
+                              const TransitionTable& transitions)
+      : decoder_cache_(decoder_cache), transitions_(transitions) {}
 
-  llvm::orc::ThreadSafeModule CreateBlockFunction(
-      const DecodedBlock& decoded_bb);
+  llvm::orc::ThreadSafeModule CreateBlockFunction(uint32_t pc);
+
+  static void OptimizeFunction(llvm::Function& function);
 
   static constexpr uint32_t kSyscallReturnCode =
       static_cast<uint32_t>(CommandType::kSyscall);

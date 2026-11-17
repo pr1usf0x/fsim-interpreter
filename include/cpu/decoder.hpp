@@ -4,24 +4,23 @@
 #include <cstdint>
 #include <unordered_map>
 #include <vector>
-#include "encoding.hpp"
 #include "cpu/fetcher.hpp"
+#include "encoding.hpp"
 
 namespace toy_sim {
 
-using block_func = uint32_t (*)(std::byte* , uint32_t*, uint32_t*);
 struct DecodedBlock {
   uint32_t pc;
   std::vector<Instruction> instructions;
   size_t call_amount;
-  block_func compiled = nullptr;
+  size_t branches_taken;
 };
 
 using DecoderCache = std::unordered_map<uint32_t, DecodedBlock>;
 
 class Decoder {
  public:
-  explicit Decoder(Fetcher& fetcher) : fetcher_(fetcher){}
+  explicit Decoder(Fetcher& fetcher) : fetcher_(fetcher) {}
 
   static Instruction DecodeInstr(uint32_t instr);
   DecodedBlock& Decode(uint32_t pc);

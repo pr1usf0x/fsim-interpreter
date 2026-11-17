@@ -105,6 +105,7 @@ void Executor::ExecuteBeq(CpuState& cpu_state, [[maybe_unused]] Memory&,
                           const Instruction* instr) {
   bool cond =
       cpu_state.GetRegister(instr->r1_) == cpu_state.GetRegister(instr->r2_);
+  cpu_state.SetBranchTaken(cond);
   if (cond) {
     cpu_state.SetRegister(Register::kPc, cpu_state.GetRegister(Register::kPc) +
                                              static_cast<int32_t>(instr->imm_));
@@ -130,6 +131,7 @@ void Executor::ExecuteAddi(CpuState& cpu_state, [[maybe_unused]] Memory& memory,
 
 void Executor::ExecuteJ(CpuState& cpu_state, [[maybe_unused]] Memory&,
                         const Instruction* instr) {
+  cpu_state.SetBranchTaken(true);
   cpu_state.SetRegister(
       Register::kPc,
       (cpu_state.GetRegister(Register::kPc) & 0xF0000000) | (instr->imm_ << 2));

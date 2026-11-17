@@ -15,41 +15,41 @@ class ToySimBBBuilder {
 
   llvm::IRBuilder<>& GetBuilder() { return b_; }
 
-  struct BuilderCtx {
+  struct ArgumentCtx {
     llvm::Value* mem;
     llvm::Value* regs;
     llvm::Value* pc;
   };
   // emiters
-  void EmitLd(const Instruction& instr, const BuilderCtx& ctx);
-  void EmitSt(const Instruction& instr, const BuilderCtx& ctx);
-  void EmitStp(const Instruction& instr, const BuilderCtx& ctx);
-  void EmitLdPost(const Instruction& instr, const BuilderCtx& ctx);
-  void EmitAdd(const Instruction& instr, const BuilderCtx& ctx);
+  void EmitLd(const Instruction& instr, const ArgumentCtx& ctx);
+  void EmitSt(const Instruction& instr, const ArgumentCtx& ctx);
+  void EmitStp(const Instruction& instr, const ArgumentCtx& ctx);
+  void EmitLdPost(const Instruction& instr, const ArgumentCtx& ctx);
+  void EmitAdd(const Instruction& instr, const ArgumentCtx& ctx);
   void EmitBeq(const Instruction& instr, llvm::BasicBlock* true_bb,
-               llvm::BasicBlock* false_bb, const BuilderCtx& ctx);
-  void EmitLi(const Instruction& instr, const BuilderCtx& ctx);
-  void EmitAddi(const Instruction& instr, const BuilderCtx& ctx);
+               llvm::BasicBlock* false_bb, const ArgumentCtx& ctx);
+  void EmitLi(const Instruction& instr, const ArgumentCtx& ctx);
+  void EmitAddi(const Instruction& instr, const ArgumentCtx& ctx);
   void EmitJ(const Instruction& instr, llvm::BasicBlock* bb,
-             const BuilderCtx& ctx);
-  void EmitNor(const Instruction& instr, const BuilderCtx& ctx);
-  void EmitSsat(const Instruction& instr, const BuilderCtx& ctx);
-  void EmitRbit(const Instruction& instr, const BuilderCtx& ctx);
-  void EmitBext(const Instruction& instr, const BuilderCtx& ctx);
-  void EmitUsat(const Instruction& instr, const BuilderCtx& ctx);
-  void SetRegister(Register reg, llvm::Value* val, const BuilderCtx& ctx);
-  void Step(const BuilderCtx& ctx);
+             const ArgumentCtx& ctx);
+  void EmitNor(const Instruction& instr, const ArgumentCtx& ctx);
+  void EmitSsat(const Instruction& instr, const ArgumentCtx& ctx);
+  void EmitRbit(const Instruction& instr, const ArgumentCtx& ctx);
+  void EmitBext(const Instruction& instr, const ArgumentCtx& ctx);
+  void EmitUsat(const Instruction& instr, const ArgumentCtx& ctx);
+  void SetRegister(Register reg, llvm::Value* val, const ArgumentCtx& ctx);
+  void Step(const ArgumentCtx& ctx);
   void WriteToMem(llvm::Value* val, llvm::Value* virt_addr,
-                  const BuilderCtx& ctx);
-  void SetPc(uint32_t new_pc, const BuilderCtx& ctx);
+                  const ArgumentCtx& ctx);
+  void SetPc(uint32_t new_pc, const ArgumentCtx& ctx);
 
  private:
   // helpers
 
-  llvm::Value* GetRegisterPtr(Register reg, const BuilderCtx& ctx);
-  llvm::Value* GetRealMemPtr(llvm::Value* ptr, const BuilderCtx& ctx);
-  llvm::Value* ReadRegister(Register reg, const BuilderCtx& ctx);
-  llvm::Value* ReadInt32FromMem(llvm::Value* virt_addr, const BuilderCtx& ctx);
+  llvm::Value* GetRegisterPtr(Register reg, const ArgumentCtx& ctx);
+  llvm::Value* GetRealMemPtr(llvm::Value* ptr, const ArgumentCtx& ctx);
+  llvm::Value* ReadRegister(Register reg, const ArgumentCtx& ctx);
+  llvm::Value* ReadInt32FromMem(llvm::Value* virt_addr, const ArgumentCtx& ctx);
 
   llvm::IRBuilder<> b_;
 };

@@ -17,4 +17,6 @@ target_compile_definitions(${TARGET} PRIVATE ${LLVM_DEFINITIONS_LIST})
 if (${THREADED_CODE})
     target_compile_definitions(${TARGET} PRIVATE -DTHREADED_CODE)
 endif()
-
+if (${NO_JIT})
+    target_compile_definitions(${TARGET} PRIVATE -DNO_JIT)
+endif()

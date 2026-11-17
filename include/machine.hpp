@@ -13,8 +13,8 @@ namespace toy_sim {
 
 class Machine {
  public:
-  explicit Machine(size_t mem_size)
-      : memory_(mem_size), cpu_(memory_), kernel_(cpu_, memory_) {};
+  explicit Machine(size_t mem_size, size_t threshold)
+      : memory_(mem_size), cpu_(memory_, threshold), kernel_(cpu_, memory_) {};
 
   uint32_t RunProgram(std::string_view file) {
     uint32_t start_addr = kernel_.MmapFile(file);

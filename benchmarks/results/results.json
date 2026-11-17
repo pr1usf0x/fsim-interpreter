@@ -1,0 +1,169 @@
+{
+  "platform": "macOS-27.0.1-arm64-arm-64bit",
+  "runs": 7,
+  "warmup": 1,
+  "threshold": 100,
+  "modes": {
+    "interpreter": {
+      "NO_JIT": "ON",
+      "THREADED_CODE": "OFF"
+    },
+    "threaded": {
+      "NO_JIT": "ON",
+      "THREADED_CODE": "ON"
+    },
+    "jit": {
+      "NO_JIT": "OFF",
+      "THREADED_CODE": "ON"
+    }
+  },
+  "compile_commands": {
+    "interpreter": "/usr/bin/c++ -DNO_JIT -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -I/opt/homebrew/Cellar/llvm/23.1.3_1/include -I/Users/pr1usf0x/Desktop/projects/toy-isa/include -isystem /Users/pr1usf0x/Desktop/projects/toy-isa/build/_deps/cli11_fetchcontent-src/include -isystem /opt/homebrew/include -DLLVM_DISABLE_ABI_BREAKING_CHECKS_ENFORCING -O2 -Wall -Wextra -std=c++23 -std=gnu++23 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -o CMakeFiles/toy_vm.dir/main.cpp.o -c /Users/pr1usf0x/Desktop/projects/toy-isa/src/main.cpp",
+    "threaded": "/usr/bin/c++ -DNO_JIT -DTHREADED_CODE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -I/opt/homebrew/Cellar/llvm/23.1.3_1/include -I/Users/pr1usf0x/Desktop/projects/toy-isa/include -isystem /Users/pr1usf0x/Desktop/projects/toy-isa/build/_deps/cli11_fetchcontent-src/include -isystem /opt/homebrew/include -DLLVM_DISABLE_ABI_BREAKING_CHECKS_ENFORCING -O2 -Wall -Wextra -std=c++23 -std=gnu++23 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -o CMakeFiles/toy_vm.dir/main.cpp.o -c /Users/pr1usf0x/Desktop/projects/toy-isa/src/main.cpp",
+    "jit": "/usr/bin/c++ -DTHREADED_CODE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -I/opt/homebrew/Cellar/llvm/23.1.3_1/include -I/Users/pr1usf0x/Desktop/projects/toy-isa/include -isystem /Users/pr1usf0x/Desktop/projects/toy-isa/build/_deps/cli11_fetchcontent-src/include -isystem /opt/homebrew/include -DLLVM_DISABLE_ABI_BREAKING_CHECKS_ENFORCING -O2 -Wall -Wextra -std=c++23 -std=gnu++23 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -o CMakeFiles/toy_vm.dir/main.cpp.o -c /Users/pr1usf0x/Desktop/projects/toy-isa/src/main.cpp"
+  },
+  "timing": "Full process wall time; includes JIT compilation; excludes assembly/build",
+  "benchmarks": {
+    "fibonacci": {
+      "interpreter": {
+        "median_ms": 1580.3393340000014,
+        "min_ms": 1566.0401250000007,
+        "speedup": 1.0,
+        "samples_seconds": [
+          1.5660401250000007,
+          1.5839532090000006,
+          1.591441249999999,
+          1.584585875000002,
+          1.5803393340000014,
+          1.5668949160000025,
+          1.5671839170000013
+        ],
+        "expected": 1819143227
+      },
+      "threaded": {
+        "median_ms": 1433.9130830000001,
+        "min_ms": 1421.1873749999988,
+        "speedup": 1.1021165457906636,
+        "samples_seconds": [
+          1.4333156659999986,
+          1.4211873749999988,
+          1.424616291000003,
+          1.4449712089999949,
+          1.4370892080000033,
+          1.4339130830000002,
+          1.4458851249999967
+        ],
+        "expected": 1819143227
+      },
+      "jit": {
+        "median_ms": 63.82733299999899,
+        "min_ms": 62.70150000000285,
+        "speedup": 24.759601564427367,
+        "samples_seconds": [
+          0.06382733299999899,
+          0.06463708400000101,
+          0.06457604199999878,
+          0.06345008299999932,
+          0.06578791700000153,
+          0.06306649999999792,
+          0.06270150000000285
+        ],
+        "expected": 1819143227
+      }
+    },
+    "sum": {
+      "interpreter": {
+        "median_ms": 1073.9288330000036,
+        "min_ms": 1063.3512910000036,
+        "speedup": 1.0,
+        "samples_seconds": [
+          1.0633512910000036,
+          1.0820731250000009,
+          1.0660216670000011,
+          1.0634617500000019,
+          1.095522250000002,
+          1.0739288330000036,
+          1.084649542000001
+        ],
+        "expected": 987459712
+      },
+      "threaded": {
+        "median_ms": 969.3742919999977,
+        "min_ms": 955.53125,
+        "speedup": 1.1078577613032121,
+        "samples_seconds": [
+          0.958483459,
+          0.9709655409999982,
+          0.9693742919999977,
+          0.9569558749999985,
+          0.9555312499999999,
+          0.9740800000000007,
+          0.9751674580000014
+        ],
+        "expected": 987459712
+      },
+      "jit": {
+        "median_ms": 60.545499999996366,
+        "min_ms": 59.86191699999921,
+        "speedup": 17.73754999132996,
+        "samples_seconds": [
+          0.06025966700000396,
+          0.0606794170000029,
+          0.06073849999999936,
+          0.07709362499999628,
+          0.06026612499999828,
+          0.05986191699999921,
+          0.060545499999996366
+        ],
+        "expected": 987459712
+      }
+    },
+    "array_sum": {
+      "interpreter": {
+        "median_ms": 1613.0186249999952,
+        "min_ms": 1605.5777920000055,
+        "speedup": 1.0,
+        "samples_seconds": [
+          1.636812833999997,
+          1.6251749999999987,
+          1.616826207999992,
+          1.606497791999999,
+          1.6130186249999952,
+          1.6121933330000076,
+          1.6055777920000054
+        ],
+        "expected": 708067456
+      },
+      "threaded": {
+        "median_ms": 1378.84824999999,
+        "min_ms": 1356.161708000002,
+        "speedup": 1.1698304182494388,
+        "samples_seconds": [
+          1.3763730419999973,
+          1.3677990420000015,
+          1.3831919579999976,
+          1.3788482499999901,
+          1.356161708000002,
+          1.3820502079999955,
+          1.3836313329999967
+        ],
+        "expected": 708067456
+      },
+      "jit": {
+        "median_ms": 94.79887500000928,
+        "min_ms": 92.91875000000971,
+        "speedup": 17.015166319218846,
+        "samples_seconds": [
+          0.09412100000000123,
+          0.09528266600000279,
+          0.09424308300000916,
+          0.09479887500000928,
+          0.09489804199999696,
+          0.09898929199999884,
+          0.09291875000000971
+        ],
+        "expected": 708067456
+      }
+    }
+  }
+}

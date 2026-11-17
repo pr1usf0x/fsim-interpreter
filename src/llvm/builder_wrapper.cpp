@@ -14,7 +14,7 @@
 
 namespace toy_sim {
 
-void ToySimBBBuilder::EmitLd(const Instruction& instr, const BuilderCtx& ctx) {
+void ToySimBBBuilder::EmitLd(const Instruction& instr, const ArgumentCtx& ctx) {
   assert(instr.type_ == CommandType::kLd);
   assert_ctx(ctx);
 
@@ -27,7 +27,7 @@ void ToySimBBBuilder::EmitLd(const Instruction& instr, const BuilderCtx& ctx) {
   Step(ctx);
 }
 
-void ToySimBBBuilder::EmitSt(const Instruction& instr, const BuilderCtx& ctx) {
+void ToySimBBBuilder::EmitSt(const Instruction& instr, const ArgumentCtx& ctx) {
   assert(instr.type_ == CommandType::kSt);
   assert_ctx(ctx);
 
@@ -39,7 +39,7 @@ void ToySimBBBuilder::EmitSt(const Instruction& instr, const BuilderCtx& ctx) {
   Step(ctx);
 }
 
-void ToySimBBBuilder::EmitStp(const Instruction& instr, const BuilderCtx& ctx) {
+void ToySimBBBuilder::EmitStp(const Instruction& instr, const ArgumentCtx& ctx) {
   assert(instr.type_ == CommandType::kStp);
   assert_ctx(ctx);
 
@@ -55,7 +55,7 @@ void ToySimBBBuilder::EmitStp(const Instruction& instr, const BuilderCtx& ctx) {
 }
 
 void ToySimBBBuilder::EmitLdPost(const Instruction& instr,
-                                 const BuilderCtx& ctx) {
+                                 const ArgumentCtx& ctx) {
   assert(instr.type_ == CommandType::kLdPost);
   assert_ctx(ctx);
 
@@ -69,7 +69,7 @@ void ToySimBBBuilder::EmitLdPost(const Instruction& instr,
   Step(ctx);
 }
 
-void ToySimBBBuilder::EmitAdd(const Instruction& instr, const BuilderCtx& ctx) {
+void ToySimBBBuilder::EmitAdd(const Instruction& instr, const ArgumentCtx& ctx) {
   assert(instr.type_ == CommandType::kAdd);
   assert_ctx(ctx);
 
@@ -83,7 +83,7 @@ void ToySimBBBuilder::EmitAdd(const Instruction& instr, const BuilderCtx& ctx) {
 void ToySimBBBuilder::EmitBeq(const Instruction& instr,
                               llvm::BasicBlock* true_bb,
                               llvm::BasicBlock* false_bb,
-                              const BuilderCtx& ctx) {
+                              const ArgumentCtx& ctx) {
   assert(instr.type_ == CommandType::kBeq);
   assert(true_bb);
   assert(false_bb);
@@ -101,7 +101,7 @@ void ToySimBBBuilder::EmitBeq(const Instruction& instr,
   b_.CreateCondBr(cond, true_bb, false_bb);
 }
 
-void ToySimBBBuilder::EmitLi(const Instruction& instr, const BuilderCtx& ctx) {
+void ToySimBBBuilder::EmitLi(const Instruction& instr, const ArgumentCtx& ctx) {
   assert(instr.type_ == CommandType::kLi);
   assert_ctx(ctx);
 
@@ -110,7 +110,7 @@ void ToySimBBBuilder::EmitLi(const Instruction& instr, const BuilderCtx& ctx) {
 }
 
 void ToySimBBBuilder::EmitAddi(const Instruction& instr,
-                               const BuilderCtx& ctx) {
+                               const ArgumentCtx& ctx) {
   assert(instr.type_ == CommandType::kAddi);
   assert_ctx(ctx);
 
@@ -122,7 +122,7 @@ void ToySimBBBuilder::EmitAddi(const Instruction& instr,
 }
 
 void ToySimBBBuilder::EmitJ(const Instruction& instr, llvm::BasicBlock* bb,
-                            const BuilderCtx& ctx) {
+                            const ArgumentCtx& ctx) {
   assert(instr.type_ == CommandType::kJ);
   assert(bb);
   assert_ctx(ctx);
@@ -135,7 +135,7 @@ void ToySimBBBuilder::EmitJ(const Instruction& instr, llvm::BasicBlock* bb,
   b_.CreateBr(bb);
 }
 
-void ToySimBBBuilder::EmitNor(const Instruction& instr, const BuilderCtx& ctx) {
+void ToySimBBBuilder::EmitNor(const Instruction& instr, const ArgumentCtx& ctx) {
   assert(instr.type_ == CommandType::kBeq);
   assert_ctx(ctx);
 
@@ -148,7 +148,7 @@ void ToySimBBBuilder::EmitNor(const Instruction& instr, const BuilderCtx& ctx) {
 }
 
 void ToySimBBBuilder::EmitSsat(const Instruction& instr,
-                               const BuilderCtx& ctx) {
+                               const ArgumentCtx& ctx) {
   assert(instr.type_ == CommandType::kSsat);
   assert(instr.imm_ <= 31);
   assert_ctx(ctx);
@@ -173,7 +173,7 @@ void ToySimBBBuilder::EmitSsat(const Instruction& instr,
 }
 
 void ToySimBBBuilder::EmitRbit(const Instruction& instr,
-                               const BuilderCtx& ctx) {
+                               const ArgumentCtx& ctx) {
   assert(instr.type_ == CommandType::kRbit);
   assert_ctx(ctx);
 
@@ -184,7 +184,7 @@ void ToySimBBBuilder::EmitRbit(const Instruction& instr,
   Step(ctx);
 }
 
-void ToySimBBBuilder::EmitBext(const Instruction& instr, const BuilderCtx& ctx) {
+void ToySimBBBuilder::EmitBext(const Instruction& instr, const ArgumentCtx& ctx) {
   assert(instr.type_ == CommandType::kBext);
   assert_ctx(ctx);
 
@@ -197,7 +197,7 @@ void ToySimBBBuilder::EmitBext(const Instruction& instr, const BuilderCtx& ctx) 
 }
 
 void ToySimBBBuilder::EmitUsat(const Instruction& instr,
-                               const BuilderCtx& ctx) {
+                               const ArgumentCtx& ctx) {
   assert(instr.type_ == CommandType::kUsat);
   assert(instr.imm_ <= 32);
   assert_ctx(ctx);
@@ -215,7 +215,7 @@ void ToySimBBBuilder::EmitUsat(const Instruction& instr,
 // =================================== HELPERS ================================
 
 llvm::Value* ToySimBBBuilder::ReadRegister(Register reg,
-                                           const BuilderCtx& ctx) {
+                                           const ArgumentCtx& ctx) {
   assert_ctx(ctx);
 
   llvm::Value* reg_ptr = GetRegisterPtr(reg, ctx);
@@ -223,7 +223,7 @@ llvm::Value* ToySimBBBuilder::ReadRegister(Register reg,
 }
 
 void ToySimBBBuilder::SetRegister(Register reg, llvm::Value* val,
-                                  const BuilderCtx& ctx) {
+                                  const ArgumentCtx& ctx) {
   assert(val);
   assert_ctx(ctx);
 
@@ -232,7 +232,7 @@ void ToySimBBBuilder::SetRegister(Register reg, llvm::Value* val,
 }
 
 llvm::Value* ToySimBBBuilder::GetRegisterPtr(Register reg,
-                                             const BuilderCtx& ctx) {
+                                             const ArgumentCtx& ctx) {
   assert_ctx(ctx);
 
   return b_.CreateGEP(b_.getInt32Ty(), ctx.regs,
@@ -240,7 +240,7 @@ llvm::Value* ToySimBBBuilder::GetRegisterPtr(Register reg,
 }
 
 llvm::Value* ToySimBBBuilder::ReadInt32FromMem(llvm::Value* virt_addr,
-                                               const BuilderCtx& ctx) {
+                                               const ArgumentCtx& ctx) {
   assert(virt_addr);
   assert_ctx(ctx);
 
@@ -249,7 +249,7 @@ llvm::Value* ToySimBBBuilder::ReadInt32FromMem(llvm::Value* virt_addr,
 }
 
 void ToySimBBBuilder::WriteToMem(llvm::Value* val, llvm::Value* virt_addr,
-                                 const BuilderCtx& ctx) {
+                                 const ArgumentCtx& ctx) {
   assert(val);
   assert(virt_addr);
   assert_ctx(ctx);
@@ -259,14 +259,14 @@ void ToySimBBBuilder::WriteToMem(llvm::Value* val, llvm::Value* virt_addr,
 }
 
 llvm::Value* ToySimBBBuilder::GetRealMemPtr(llvm::Value* ptr,
-                                            const BuilderCtx& ctx) {
+                                            const ArgumentCtx& ctx) {
   assert(ptr);
   assert_ctx(ctx);
 
   return b_.CreateGEP(b_.getInt8Ty(), ctx.mem, ptr);
 }
 
-void ToySimBBBuilder::Step(const BuilderCtx& ctx) {
+void ToySimBBBuilder::Step(const ArgumentCtx& ctx) {
   assert_ctx(ctx);
 
   llvm::Value* pc = b_.CreateLoad(b_.getInt32Ty(), ctx.pc, "pcbefore");
@@ -274,7 +274,7 @@ void ToySimBBBuilder::Step(const BuilderCtx& ctx) {
   b_.CreateStore(new_pc, ctx.pc);
 }
 
-void ToySimBBBuilder::SetPc(uint32_t new_pc, const BuilderCtx& ctx) {
+void ToySimBBBuilder::SetPc(uint32_t new_pc, const ArgumentCtx& ctx) {
   assert_ctx(ctx);
 
   b_.CreateStore(b_.getInt32(new_pc), ctx.pc);

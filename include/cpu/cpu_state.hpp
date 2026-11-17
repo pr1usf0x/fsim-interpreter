@@ -16,16 +16,19 @@ class CpuState {
     reg != Register::kPc ? registers_[static_cast<size_t>(reg)] = value
                          : pc_ = value;
   }
+  void SetBranchTaken(bool taken) { branch_taken_ = taken; }
   // getters
   uint32_t GetRegister(Register reg) const {
     return reg != Register::kPc ? registers_[static_cast<size_t>(reg)] : pc_;
   }
   uint32_t* GetRegisterPtr() { return registers_.data(); }
   uint32_t* GetPcPtr() { return &pc_; }
+  bool IsBranchTaken() const { return branch_taken_; }
 
  private:
   std::vector<uint32_t> registers_;
   uint32_t pc_{};
+  bool branch_taken_{};
 };
 }  // namespace toy_sim
 
